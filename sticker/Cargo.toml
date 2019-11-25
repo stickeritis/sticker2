@@ -16,3 +16,4 @@ conllx = "0.12.1"
 failure = "0.1"
 finalfusion = "0.11"
 tch = "0.1"
+wordpiece = { git = "https://github.com/stickeritis/wordpiece.git", rev = "8d58820ea1" }
