@@ -15,5 +15,6 @@ license-file = "../LICENSE.md"
 conllx = "0.12.1"
 failure = "0.1"
 finalfusion = "0.11"
-tch = "0.1"
+numberer = "0.1.1"
+tch = { git = "https://github.com/LaurentMazare/tch-rs.git", rev = "bd9da2d" }
 wordpieces = "0.1"

@@ -1,6 +1,8 @@
 use conllx::graph::{Node, Sentence};
 use wordpieces::{WordPiece, WordPieces};
 
+pub mod vectorizer;
+
 /// A word piece tokenizer.
 ///
 /// This token splits CoNLL-X tokens into word pieces. For
