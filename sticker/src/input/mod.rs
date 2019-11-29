@@ -1,5 +1,5 @@
 use conllx::graph::{Node, Sentence};
-use wordpiece::{WordPiece, WordPieces};
+use wordpieces::{WordPiece, WordPieces};
 
 /// A word piece tokenizer.
 ///
@@ -124,7 +124,7 @@ mod tests {
 
     use conllx::graph::Sentence;
     use conllx::token::Token;
-    use wordpiece::WordPieces;
+    use wordpieces::WordPieces;
 
     use super::WordPieceTokenizer;
 
