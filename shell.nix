@@ -1,16 +1,19 @@
-with import <nixpkgs> {};
+# We pin nixpkgs to improve reproducability. We don't pin Rust to a
+# specific version, but use the latest stable release.
 
-stdenv.mkDerivation rec {
-  name = "sticker-env";
-  env = buildEnv { name = name; paths = buildInputs; };
-
+let
+  sources = import ./nix/sources.nix;
+  nixpkgs = import sources.nixpkgs {};
+  danieldk = nixpkgs.callPackage sources.danieldk {};
+  mozilla = nixpkgs.callPackage "${sources.mozilla}/package-set.nix" {};
+in with nixpkgs; mkShell {
   nativeBuildInputs = [
-    latest.rustChannels.stable.rust
-    pkgconfig
+    mozilla.latest.rustChannels.stable.rust
   ];
 
   buildInputs = [
     curl
-    openssl
   ] ++ lib.optional stdenv.isDarwin darwin.apple_sdk.frameworks.Security;
+
+  LIBTORCH = "${danieldk.python3Packages.pytorch.v1_3_1.dev}";
 }
