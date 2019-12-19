@@ -1,0 +1,13 @@
+[package]
+name = "sticker-utils"
+version = "0.1.0"
+authors = ["Daniël de Kok <me@danieldk.eu>"]
+edition = "2018"
+
+[dependencies]
+clap = "2"
+conllx = "0.12.1"
+serde_yaml = "0.8"
+stdinout = "0.4"
+sticker = { path = "../sticker" }
+sticker-encoders = "0.1"
