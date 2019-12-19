@@ -1,2 +1,2 @@
 [workspace]
-members = ["sticker"]
+members = ["sticker", "sticker-utils"]
