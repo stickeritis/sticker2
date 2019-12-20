@@ -9,10 +9,12 @@ let
 in with nixpkgs; mkShell {
   nativeBuildInputs = [
     mozilla.latest.rustChannels.stable.rust
+    pkgconfig
   ];
 
   buildInputs = [
     curl
+    openssl
   ] ++ lib.optional stdenv.isDarwin darwin.apple_sdk.frameworks.Security;
 
   LIBTORCH = "${danieldk.python3Packages.pytorch.v1_3_1.dev}";
