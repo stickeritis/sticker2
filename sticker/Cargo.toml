@@ -16,10 +16,10 @@ conllx = "0.12.1"
 edit_tree = "0.1.1"
 failure = "0.1"
 finalfusion = "0.11"
-numberer = "0.1"
+numberer = "0.1.1"
 serde = { version = "1", features = [ "derive" ] }
 sticker-encoders = "0.1.2"
-tch = { git = "https://github.com/LaurentMazare/tch-rs.git", rev = "bd9da2d" }
+tch = "0.1.3"
 toml = "0.5"
 wordpieces = "0.1"
 
