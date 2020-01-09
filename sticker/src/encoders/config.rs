@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::ops::Deref;
 
 use serde::{Deserialize, Serialize};
@@ -11,10 +10,10 @@ use sticker_encoders::lemma::BackoffStrategy;
 /// encoder configuration.
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
-pub struct EncodersConfig(pub HashMap<String, EncoderType>);
+pub struct EncodersConfig(pub Vec<NamedEncoderConfig>);
 
 impl Deref for EncodersConfig {
-    type Target = HashMap<String, EncoderType>;
+    type Target = [NamedEncoderConfig];
 
     fn deref(&self) -> &Self::Target {
         &self.0
@@ -44,4 +43,12 @@ pub enum DependencyEncoder {
 
     /// Encode a token's head by relative position of the POS tag.
     RelativePOS,
+}
+
+/// Configuration of an encoder with a name.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct NamedEncoderConfig {
+    pub encoder: EncoderType,
+    pub name: String,
 }

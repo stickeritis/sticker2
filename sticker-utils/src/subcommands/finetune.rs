@@ -60,8 +60,12 @@ impl StickerApp for FinetuneApp {
         let encoders: Encoders =
             serde_yaml::from_reader(&f).or_exit("Cannot deserialize labels", 1);
 
-        for encoder_name in encoders.keys() {
-            eprintln!("Loaded labels for encoder '{}'", encoder_name);
+        for encoder in &*encoders {
+            eprintln!(
+                "Loaded labels for encoder '{}': {} labels",
+                encoder.name(),
+                encoder.encoder().len()
+            );
         }
 
         for sentence in treebank_reader.sentences() {
