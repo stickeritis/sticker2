@@ -73,10 +73,11 @@ impl StickerApp for PrepareApp {
         for sentence in treebank_reader.sentences() {
             let sentence = sentence.or_exit("Cannot read sentence from treebank", 1);
 
-            for (name, encoder) in &*encoders {
-                encoder
-                    .encode(&sentence)
-                    .or_exit(format!("Cannot encode sentence with encoder {}", name), 1);
+            for encoder in &*encoders {
+                encoder.encoder().encode(&sentence).or_exit(
+                    format!("Cannot encode sentence with encoder {}", encoder.name()),
+                    1,
+                );
             }
         }
 

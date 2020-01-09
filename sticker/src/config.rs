@@ -92,12 +92,11 @@ fn relativize_path(config_path: &Path, filename: &str) -> Fallible<String> {
 mod tests {
     use std::fs::File;
 
-    use maplit::hashmap;
     use sticker_encoders::layer::Layer;
     use sticker_encoders::lemma::BackoffStrategy;
 
     use crate::config::{Config, Labeler, TomlRead};
-    use crate::encoders::{DependencyEncoder, EncoderType, EncodersConfig};
+    use crate::encoders::{DependencyEncoder, EncoderType, EncodersConfig, NamedEncoderConfig};
 
     #[test]
     fn config() {
@@ -109,12 +108,21 @@ mod tests {
             Config {
                 labeler: Labeler {
                     labels: "sticker.labels".to_string(),
-                    encoders: EncodersConfig(hashmap![
-                    "dep".to_string() => EncoderType::Dependency(DependencyEncoder::RelativePOS),
-                    "lemma".to_string() => EncoderType::Lemma(BackoffStrategy::Form),
-                    "pos".to_string() => EncoderType::Sequence(Layer::Pos),
-                            ]),
-                }
+                    encoders: EncodersConfig(vec![
+                        NamedEncoderConfig {
+                            name: "dep".to_string(),
+                            encoder: EncoderType::Dependency(DependencyEncoder::RelativePOS)
+                        },
+                        NamedEncoderConfig {
+                            name: "lemma".to_string(),
+                            encoder: EncoderType::Lemma(BackoffStrategy::Form)
+                        },
+                        NamedEncoderConfig {
+                            name: "pos".to_string(),
+                            encoder: EncoderType::Sequence(Layer::Pos)
+                        },
+                    ]),
+                },
             }
         );
     }
