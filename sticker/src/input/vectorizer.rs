@@ -1,7 +1,7 @@
 use std::io::{self, BufRead};
 
+use ndarray::Array1;
 use numberer::Numberer;
-use tch::Tensor;
 
 /// Trait for reading word pieces.
 pub trait ReadWordPieces
@@ -19,13 +19,13 @@ pub struct WordPieceVectorizer {
 
 impl WordPieceVectorizer {
     /// Vectorize a slice of word pieces.
-    pub fn vectorize(&self, word_pieces: &[impl AsRef<str>]) -> Tensor {
+    pub fn vectorize(&self, word_pieces: &[impl AsRef<str>]) -> Array1<i64> {
         let indices = word_pieces
             .iter()
             .map(|piece| self.numberer.number(piece.as_ref()).expect("Missing piece") as i64)
             .collect::<Vec<_>>();
 
-        Tensor::of_slice(&indices)
+        Array1::from(indices)
     }
 }
 
@@ -47,7 +47,7 @@ mod tests {
     use std::fs::File;
     use std::io::BufReader;
 
-    use tch::Tensor;
+    use ndarray::Array1;
 
     use super::{ReadWordPieces, WordPieceVectorizer};
 
@@ -68,7 +68,9 @@ mod tests {
 
         assert_eq!(
             tensor,
-            Tensor::of_slice(&[133i64, 1937, 14010, 30, 32, 26939, 26962, 12558, 2739, 2])
+            Array1::from(vec![
+                133i64, 1937, 14010, 30, 32, 26939, 26962, 12558, 2739, 2
+            ])
         );
     }
 }
