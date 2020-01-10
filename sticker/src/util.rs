@@ -1,4 +1,5 @@
 use rand::Rng;
+use tch::{Kind, Tensor};
 
 pub struct RandomRemoveVec<T, R> {
     inner: Vec<T>,
@@ -57,6 +58,18 @@ where
         self.inner
             .swap_remove(self.rng.gen_range(0, self.inner.len()))
     }
+}
+
+/// Convert sequence lengths to masks.
+pub fn seq_len_to_mask(seq_lens: &Tensor, max_len: i64) -> Tensor {
+    let batch_size = seq_lens.size()[0];
+    Tensor::arange(max_len, (Kind::Int, seq_lens.device()))
+        // Construct a matrix [batch_size, max_len] where each row
+        // is 0..(max_len - 1).
+        .repeat(&[batch_size])
+        .view_(&[batch_size, max_len])
+        // Time steps less than the length in seq_lens are active.
+        .lt_1(&seq_lens.unsqueeze(1))
 }
 
 #[cfg(test)]

@@ -12,6 +12,8 @@ pub mod model;
 
 pub mod optimizers;
 
+pub mod tagger;
+
 pub mod tensor;
 
 pub mod util;
