@@ -16,6 +16,7 @@ conllx = "0.12.1"
 edit_tree = "0.1.1"
 failure = "0.1"
 hdf5 = "0.5"
+ndarray = "0.13"
 numberer = "0.1.1"
 serde = { version = "1", features = [ "derive" ] }
 sticker-encoders = "0.1.4"
