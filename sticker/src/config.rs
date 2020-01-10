@@ -1,11 +1,41 @@
-use std::io::Read;
+use std::convert::TryFrom;
+use std::fs::File;
+use std::io::{BufRead, BufReader, Read};
 use std::path::Path;
 
 use failure::{format_err, Fallible};
 use serde::{Deserialize, Serialize};
+use serde_json;
+use sticker_transformers::bert_model::BertConfig;
 use toml;
+use wordpieces::WordPieces;
 
 use crate::encoders::EncodersConfig;
+use crate::input::vectorizer::{ReadWordPieces, WordPieceVectorizer};
+use crate::input::WordPieceTokenizer;
+
+/// Input configuration.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct Input {
+    /// Word pieces file.
+    pub word_pieces: String,
+}
+
+impl Input {
+    /// Construct a word piece tokenizer.
+    pub fn word_piece_tokenizer(&self) -> Fallible<WordPieceTokenizer> {
+        let f = File::open(&self.word_pieces)?;
+        let pieces = WordPieces::try_from(BufReader::new(f).lines())?;
+        Ok(WordPieceTokenizer::new(pieces, "[UNK]"))
+    }
+
+    /// Construct a word piece vectorizer.
+    pub fn word_piece_vectorizer(&self) -> Fallible<WordPieceVectorizer> {
+        let f = File::open(&self.word_pieces)?;
+        Ok(WordPieceVectorizer::read_word_pieces(BufReader::new(f))?)
+    }
+}
 
 /// Labeler configuration.
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
@@ -18,12 +48,37 @@ pub struct Labeler {
     pub encoders: EncodersConfig,
 }
 
+/// Model configuration.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct Model {
+    /// Model parameters.
+    pub parameters: String,
+
+    /// Configuration of the pretrained model.
+    pub pretrain_config: String,
+}
+
+impl Model {
+    /// Read the pretraining model configuration.
+    pub fn pretrain_config(&self) -> Fallible<BertConfig> {
+        let f = File::open(&self.pretrain_config)?;
+        Ok(serde_json::from_reader(BufReader::new(f))?)
+    }
+}
+
 /// Sequence labeler configuration.
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct Config {
+    /// Configuration of the input representations.
+    pub input: Input,
+
     /// Configuration of the labeler.
     pub labeler: Labeler,
+
+    /// Configuration of the model.
+    pub model: Model,
 }
 
 impl Config {
@@ -34,7 +89,10 @@ impl Config {
     {
         let config_path = config_path.as_ref();
 
+        self.input.word_pieces = relativize_path(config_path, &self.input.word_pieces)?;
         self.labeler.labels = relativize_path(config_path, &self.labeler.labels)?;
+        self.model.parameters = relativize_path(config_path, &self.model.parameters)?;
+        self.model.pretrain_config = relativize_path(config_path, &self.model.pretrain_config)?;
 
         Ok(())
     }
@@ -95,7 +153,7 @@ mod tests {
     use sticker_encoders::layer::Layer;
     use sticker_encoders::lemma::BackoffStrategy;
 
-    use crate::config::{Config, Labeler, TomlRead};
+    use crate::config::{Config, Input, Labeler, Model, TomlRead};
     use crate::encoders::{DependencyEncoder, EncoderType, EncodersConfig, NamedEncoderConfig};
 
     #[test]
@@ -106,6 +164,9 @@ mod tests {
         assert_eq!(
             config,
             Config {
+                input: Input {
+                    word_pieces: "bert-base-german-cased-vocab.txt".to_string()
+                },
                 labeler: Labeler {
                     labels: "sticker.labels".to_string(),
                     encoders: EncodersConfig(vec![
@@ -123,6 +184,10 @@ mod tests {
                         },
                     ]),
                 },
+                model: Model {
+                    parameters: "epoch-99".to_string(),
+                    pretrain_config: "bert_config.json".to_string(),
+                }
             }
         );
     }
