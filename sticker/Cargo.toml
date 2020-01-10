@@ -28,4 +28,5 @@ toml = "0.5"
 wordpieces = "0.1"
 
 [dev-dependencies]
+approx = "0.3"
 maplit = "1"
