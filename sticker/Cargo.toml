@@ -18,6 +18,8 @@ failure = "0.1"
 hdf5 = "0.5"
 ndarray = "0.13"
 numberer = "0.1.1"
+rand = "0.7"
+rand_xorshift = "0.2"
 serde = { version = "1", features = [ "derive" ] }
 sticker-encoders = "0.1.4"
 sticker-transformers = "0.1"

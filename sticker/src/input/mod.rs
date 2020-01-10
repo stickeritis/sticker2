@@ -3,6 +3,36 @@ use wordpieces::{WordPiece, WordPieces};
 
 pub mod vectorizer;
 
+/// Trait for wordpiece tokenizers.
+pub trait Tokenize {
+    /// Tokenize the tokens in a sentence into word pieces.
+    fn tokenize(self, tokenizer: &WordPieceTokenizer) -> SentenceWithPieces<String>;
+}
+
+impl Tokenize for Sentence {
+    fn tokenize(self, tokenizer: &WordPieceTokenizer) -> SentenceWithPieces<String> {
+        let (pieces, token_offsets) = tokenizer.tokenize(&self);
+
+        SentenceWithPieces {
+            pieces,
+            sentence: self,
+            token_offsets,
+        }
+    }
+}
+
+/// A sentence and its word pieces.
+pub struct SentenceWithPieces<T> {
+    /// Word pieces in a sentence.
+    pub pieces: Vec<T>,
+
+    /// Sentence graph.
+    pub sentence: Sentence,
+
+    /// The the offsets of tokens in `pieces`.
+    pub token_offsets: Vec<usize>,
+}
+
 /// A word piece tokenizer.
 ///
 /// This token splits CoNLL-X tokens into word pieces. For
@@ -38,16 +68,13 @@ impl WordPieceTokenizer {
     /// * The word pieces of all tokens;
     /// * the offset of each token into the word pieces.
     ///
-    /// The offset at position 0 contains a dummy value, since this
-    /// token represents the special *ROOT* token.
+    /// The offset at position 0 represents the first word (and not the
+    /// special *ROOT* token).
     pub fn tokenize(&self, sentence: &Sentence) -> (Vec<String>, Vec<usize>) {
         // An average of three pieces per token ought to enough for
         // everyone ;).
         let mut pieces = Vec::with_capacity((sentence.len() - 1) * 3);
         let mut token_offsets = Vec::with_capacity(sentence.len());
-
-        // Stub for artificial root.
-        token_offsets.push(0);
 
         for token in sentence.iter().filter_map(Node::token) {
             token_offsets.push(pieces.len());
@@ -150,6 +177,6 @@ mod tests {
             pieces,
             &["Ver", "##unt", "##reute", "die", "A", "##W", "##O", "Spenden", "##geld", "[UNK]"]
         );
-        assert_eq!(offsets, &[0, 0, 3, 4, 7, 9]);
+        assert_eq!(offsets, &[0, 3, 4, 7, 9]);
     }
 }
