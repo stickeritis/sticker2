@@ -8,6 +8,8 @@ pub mod input;
 
 pub mod model;
 
+pub mod optimizers;
+
 pub mod tensor;
 
 pub mod util;
