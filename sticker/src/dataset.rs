@@ -11,8 +11,8 @@ use sticker_encoders::SentenceEncoder;
 
 use crate::encoders::NamedEncoder;
 use crate::input::vectorizer::WordPieceVectorizer;
-use crate::input::{Tokenize, WordPieceTokenizer};
-use crate::tensor::{TensorBuilder, Tensors};
+use crate::input::{SentenceWithPieces, Tokenize, WordPieceTokenizer};
+use crate::tensor::{NoLabels, TensorBuilder, Tensors};
 use crate::util::RandomRemoveVec;
 
 /// A set of training/validation data.
@@ -30,6 +30,7 @@ pub trait DataSet<'a> {
     /// Sentences longer than `max_len` are skipped. If you want to
     /// include all sentences, you can use `usize::MAX` as the maximum
     /// length.
+    #[allow(clippy::too_many_arguments)]
     fn batches(
         self,
         encoders: &'a [NamedEncoder],
@@ -38,6 +39,7 @@ pub trait DataSet<'a> {
         batch_size: usize,
         max_len: Option<usize>,
         shuffle_buffer_size: Option<usize>,
+        labels: bool,
     ) -> Fallible<Self::Iter>;
 }
 
@@ -93,6 +95,7 @@ where
         batch_size: usize,
         max_len: Option<usize>,
         shuffle_buffer_size: Option<usize>,
+        labels: bool,
     ) -> Fallible<Self::Iter> {
         // Rewind to the beginning of the data (if necessary).
         self.0.seek(SeekFrom::Start(0))?;
@@ -102,6 +105,7 @@ where
         Ok(ConllxIter {
             batch_size,
             encoders,
+            labels,
             sentences: ConllxDataSet::get_sentence_iter(reader, max_len, shuffle_buffer_size),
             tokenizer,
             vectorizer,
@@ -114,10 +118,79 @@ where
     I: Iterator<Item = Fallible<Sentence>>,
 {
     batch_size: usize,
+    labels: bool,
     encoders: &'a [NamedEncoder],
     tokenizer: &'a WordPieceTokenizer,
     vectorizer: &'a WordPieceVectorizer,
     sentences: I,
+}
+
+impl<'a, I> ConllxIter<'a, I>
+where
+    I: Iterator<Item = Fallible<Sentence>>,
+{
+    fn next_with_labels(
+        &mut self,
+        tokenized_sentences: Vec<SentenceWithPieces<String>>,
+        max_seq_len: usize,
+    ) -> Option<Fallible<Tensors>> {
+        let mut builder = TensorBuilder::new(
+            tokenized_sentences.len(),
+            max_seq_len,
+            self.encoders.iter().map(NamedEncoder::name),
+        );
+
+        for sentence in tokenized_sentences {
+            let input = self.vectorizer.vectorize(&sentence.pieces);
+            let mut token_mask = Array1::zeros((input.len(),));
+            for token_idx in &sentence.token_offsets {
+                token_mask[*token_idx] = 1;
+            }
+
+            let mut encoder_labels = HashMap::with_capacity(self.encoders.len());
+            for encoder in self.encoders {
+                let encoding = match encoder.encoder().encode(&sentence.sentence) {
+                    Ok(encoding) => encoding,
+                    Err(err) => return Some(Err(err)),
+                };
+
+                let mut labels = Array1::from_elem((input.len(),), 1i64);
+                for (encoding, offset) in encoding.into_iter().zip(&sentence.token_offsets) {
+                    labels[*offset] = encoding as i64;
+                }
+
+                encoder_labels.insert(encoder.name(), labels);
+            }
+
+            builder.add_with_labels(input.view(), encoder_labels, token_mask.view());
+        }
+
+        Some(Ok(builder.into()))
+    }
+
+    fn next_without_labels(
+        &mut self,
+        tokenized_sentences: Vec<SentenceWithPieces<String>>,
+        max_seq_len: usize,
+    ) -> Option<Fallible<Tensors>> {
+        let mut builder: TensorBuilder<NoLabels> = TensorBuilder::new(
+            tokenized_sentences.len(),
+            max_seq_len,
+            self.encoders.iter().map(NamedEncoder::name),
+        );
+
+        for sentence in tokenized_sentences {
+            let input = self.vectorizer.vectorize(&sentence.pieces);
+            let mut token_mask = Array1::zeros((input.len(),));
+            for token_idx in &sentence.token_offsets {
+                token_mask[*token_idx] = 1;
+            }
+
+            builder.add_without_labels(input.view(), token_mask.view());
+        }
+
+        Some(Ok(builder.into()))
+    }
 }
 
 impl<'a, I> Iterator for ConllxIter<'a, I>
@@ -155,38 +228,11 @@ where
             .max()
             .unwrap_or(0);
 
-        let mut builder = TensorBuilder::new(
-            tokenized_sentences.len(),
-            max_seq_len,
-            self.encoders.iter().map(NamedEncoder::name),
-        );
-
-        for sentence in tokenized_sentences {
-            let input = self.vectorizer.vectorize(&sentence.pieces);
-            let mut token_mask = Array1::zeros((input.len(),));
-            for token_idx in &sentence.token_offsets {
-                token_mask[*token_idx] = 1;
-            }
-
-            let mut encoder_labels = HashMap::with_capacity(self.encoders.len());
-            for encoder in self.encoders {
-                let encoding = match encoder.encoder().encode(&sentence.sentence) {
-                    Ok(encoding) => encoding,
-                    Err(err) => return Some(Err(err)),
-                };
-
-                let mut labels = Array1::from_elem((input.len(),), 1i64);
-                for (encoding, offset) in encoding.into_iter().zip(&sentence.token_offsets) {
-                    labels[*offset] = encoding as i64;
-                }
-
-                encoder_labels.insert(encoder.name(), labels);
-            }
-
-            builder.add_with_labels(input.view(), encoder_labels, token_mask.view());
+        if self.labels {
+            self.next_with_labels(tokenized_sentences, max_seq_len)
+        } else {
+            self.next_without_labels(tokenized_sentences, max_seq_len)
         }
-
-        Some(Ok(builder.into()))
     }
 }
 
