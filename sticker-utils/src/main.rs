@@ -2,6 +2,8 @@ use std::io::stdout;
 
 use clap::{crate_version, App, AppSettings, Arg, Shell, SubCommand};
 
+pub mod progress;
+
 mod subcommands;
 
 pub mod traits;
