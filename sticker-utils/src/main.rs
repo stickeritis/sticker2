@@ -20,6 +20,7 @@ static DEFAULT_CLAP_SETTINGS: &[AppSettings] = &[
 fn main() {
     // Known subapplications.
     let apps = vec![
+        subcommands::AnnotateApp::app(),
         subcommands::FinetuneApp::app(),
         subcommands::PrepareApp::app(),
     ];
@@ -38,6 +39,9 @@ fn main() {
     let matches = cli.clone().get_matches();
 
     match matches.subcommand_name().unwrap() {
+        "annotate" => {
+            subcommands::AnnotateApp::parse(matches.subcommand_matches("annotate").unwrap()).run()
+        }
         "completions" => {
             let shell = matches
                 .subcommand_matches("completions")

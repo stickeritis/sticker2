@@ -13,3 +13,4 @@ serde_yaml = "0.8"
 stdinout = "0.4"
 sticker = { path = "../sticker" }
 sticker-encoders = "0.1"
+tch = "0.1.3"
