@@ -4,6 +4,8 @@ use clap::{crate_version, App, AppSettings, Arg, Shell, SubCommand};
 
 pub mod progress;
 
+pub mod save;
+
 pub mod sent_proc;
 
 mod subcommands;
