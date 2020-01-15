@@ -84,7 +84,7 @@ impl Tagger {
                 token_mask[*token_idx] = 1;
             }
 
-            builder.add_without_labels(input.view());
+            builder.add_without_labels(input.view(), token_mask.view());
         }
 
         Ok(builder.into())
