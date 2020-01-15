@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 use std::io::{BufReader, Read, Seek, SeekFrom};
 
-use conllx::graph::Sentence;
 use conllx::io::{ReadSentence, Reader};
 use failure::Fallible;
 use ndarray::Array1;
@@ -59,33 +58,38 @@ impl<R> ConllxDataSet<R> {
     /// sequence without filtering them.
     ///
     /// If `max_len` == `None`, no filtering is performed.
-    fn get_sentence_iter<'a>(
+    fn get_sentence_iter<'ds, 'a: 'ds>(
         reader: R,
+        tokenizer: &'a WordPieceTokenizer,
         max_len: Option<usize>,
         shuffle_buffer_size: Option<usize>,
-    ) -> Box<dyn Iterator<Item = Fallible<Sentence>> + 'a>
+    ) -> Box<dyn Iterator<Item = Fallible<SentenceWithPieces<String>>> + 'ds>
     where
-        R: ReadSentence + 'a,
+        R: ReadSentence + 'ds,
     {
+        let tokenized_sentences = reader
+            .sentences()
+            .map(move |s| s.map(|s| s.tokenize(tokenizer)));
+
         match (max_len, shuffle_buffer_size) {
             (Some(max_len), Some(buffer_size)) => Box::new(
-                reader
-                    .sentences()
+                tokenized_sentences
                     .filter_by_len(max_len)
                     .shuffle(buffer_size),
             ),
-            (Some(max_len), None) => Box::new(reader.sentences().filter_by_len(max_len)),
-            (None, Some(buffer_size)) => Box::new(reader.sentences().shuffle(buffer_size)),
-            (None, None) => Box::new(reader.sentences()),
+            (Some(max_len), None) => Box::new(tokenized_sentences.filter_by_len(max_len)),
+            (None, Some(buffer_size)) => Box::new(tokenized_sentences.shuffle(buffer_size)),
+            (None, None) => Box::new(tokenized_sentences),
         }
     }
 }
 
-impl<'a, 'ds, R> DataSet<'a> for &'ds mut ConllxDataSet<R>
+impl<'ds, 'a: 'ds, R> DataSet<'a> for &'ds mut ConllxDataSet<R>
 where
     R: Read + Seek,
 {
-    type Iter = ConllxIter<'a, Box<dyn Iterator<Item = Fallible<Sentence>> + 'ds>>;
+    type Iter =
+        ConllxIter<'a, Box<dyn Iterator<Item = Fallible<SentenceWithPieces<String>>> + 'ds>>;
 
     fn batches(
         self,
@@ -106,8 +110,12 @@ where
             batch_size,
             encoders,
             labels,
-            sentences: ConllxDataSet::get_sentence_iter(reader, max_len, shuffle_buffer_size),
-            tokenizer,
+            sentences: ConllxDataSet::get_sentence_iter(
+                reader,
+                tokenizer,
+                max_len,
+                shuffle_buffer_size,
+            ),
             vectorizer,
         })
     }
@@ -115,19 +123,18 @@ where
 
 pub struct ConllxIter<'a, I>
 where
-    I: Iterator<Item = Fallible<Sentence>>,
+    I: Iterator<Item = Fallible<SentenceWithPieces<String>>>,
 {
     batch_size: usize,
     labels: bool,
     encoders: &'a [NamedEncoder],
-    tokenizer: &'a WordPieceTokenizer,
     vectorizer: &'a WordPieceVectorizer,
     sentences: I,
 }
 
 impl<'a, I> ConllxIter<'a, I>
 where
-    I: Iterator<Item = Fallible<Sentence>>,
+    I: Iterator<Item = Fallible<SentenceWithPieces<String>>>,
 {
     fn next_with_labels(
         &mut self,
@@ -195,7 +202,7 @@ where
 
 impl<'a, I> Iterator for ConllxIter<'a, I>
 where
-    I: Iterator<Item = Fallible<Sentence>>,
+    I: Iterator<Item = Fallible<SentenceWithPieces<String>>>,
 {
     type Item = Fallible<Tensors>;
 
@@ -217,26 +224,21 @@ where
             return None;
         }
 
-        let tokenized_sentences = batch_sentences
-            .into_iter()
-            .map(|s| s.tokenize(&self.tokenizer))
-            .collect::<Vec<_>>();
-
-        let max_seq_len = tokenized_sentences
+        let max_seq_len = batch_sentences
             .iter()
             .map(|s| s.pieces.len())
             .max()
             .unwrap_or(0);
 
         if self.labels {
-            self.next_with_labels(tokenized_sentences, max_seq_len)
+            self.next_with_labels(batch_sentences, max_seq_len)
         } else {
-            self.next_without_labels(tokenized_sentences, max_seq_len)
+            self.next_without_labels(batch_sentences, max_seq_len)
         }
     }
 }
 
-/// Trait providing adapters for `conllx::io::Sentences`.
+/// Trait providing adapters for `SentenceWithPieces` iterators.
 pub trait SentenceIter: Sized {
     fn filter_by_len(self, max_len: usize) -> LengthFilter<Self>;
     fn shuffle(self, buffer_size: usize) -> Shuffled<Self>;
@@ -244,7 +246,7 @@ pub trait SentenceIter: Sized {
 
 impl<I> SentenceIter for I
 where
-    I: Iterator<Item = Fallible<Sentence>>,
+    I: Iterator<Item = Fallible<SentenceWithPieces<String>>>,
 {
     fn filter_by_len(self, max_len: usize) -> LengthFilter<Self> {
         LengthFilter {
@@ -270,15 +272,15 @@ pub struct LengthFilter<I> {
 
 impl<I> Iterator for LengthFilter<I>
 where
-    I: Iterator<Item = Fallible<Sentence>>,
+    I: Iterator<Item = Fallible<SentenceWithPieces<String>>>,
 {
-    type Item = Fallible<Sentence>;
+    type Item = Fallible<SentenceWithPieces<String>>;
 
     fn next(&mut self) -> Option<Self::Item> {
         while let Some(sent) = self.inner.next() {
             // Treat Err as length 0 to keep our type as Result<Sentence, Error>. The iterator
             // will properly return the Error at a later point.
-            let len = sent.as_ref().map(|s| s.len()).unwrap_or(0);
+            let len = sent.as_ref().map(|s| s.pieces.len()).unwrap_or(0);
             if len > self.max_len {
                 continue;
             }
@@ -295,15 +297,15 @@ where
 /// and pick a random element from the buffer.
 pub struct Shuffled<I> {
     inner: I,
-    buffer: RandomRemoveVec<Sentence, XorShiftRng>,
+    buffer: RandomRemoveVec<SentenceWithPieces<String>, XorShiftRng>,
     buffer_size: usize,
 }
 
 impl<I> Iterator for Shuffled<I>
 where
-    I: Iterator<Item = Fallible<Sentence>>,
+    I: Iterator<Item = Fallible<SentenceWithPieces<String>>>,
 {
-    type Item = Fallible<Sentence>;
+    type Item = Fallible<SentenceWithPieces<String>>;
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.buffer.is_empty() {
