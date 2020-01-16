@@ -4,6 +4,10 @@ version = "0.1.0"
 authors = ["Daniël de Kok <me@danieldk.eu>"]
 edition = "2018"
 
+[[bin]]
+name = "sticker2"
+path = "src/main.rs"
+
 [dependencies]
 clap = "2"
 conllx = "0.12.1"
