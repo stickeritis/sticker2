@@ -162,7 +162,12 @@ impl FinetuneApp {
                 &batch.inputs.to_device(self.device),
                 &attention_mask.to_device(self.device),
                 &batch.token_mask.to_device(self.device),
-                &batch.labels.expect("Batch without labels."),
+                &batch
+                    .labels
+                    .expect("Batch without labels.")
+                    .into_iter()
+                    .map(|(encoder_name, labels)| (encoder_name, labels.to_device(self.device)))
+                    .collect(),
                 self.label_smoothing,
                 optimizer.is_some(),
                 !self.finetune_embeds || freeze_encoder,
