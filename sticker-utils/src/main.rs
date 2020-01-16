@@ -10,6 +10,8 @@ pub mod sent_proc;
 
 mod subcommands;
 
+pub mod tagger;
+
 pub mod traits;
 use traits::StickerApp;
 
@@ -25,6 +27,7 @@ fn main() {
         subcommands::AnnotateApp::app(),
         subcommands::FinetuneApp::app(),
         subcommands::PrepareApp::app(),
+        subcommands::ServerApp::app(),
     ];
 
     let cli = App::new("sticker")
@@ -57,6 +60,9 @@ fn main() {
         }
         "prepare" => {
             subcommands::PrepareApp::parse(matches.subcommand_matches("prepare").unwrap()).run()
+        }
+        "server" => {
+            subcommands::ServerApp::parse(matches.subcommand_matches("server").unwrap()).run()
         }
         _unknown => unreachable!(),
     }

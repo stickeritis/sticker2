@@ -1,19 +1,15 @@
-use std::fs::File;
 use std::io::BufWriter;
 
 use clap::{App, Arg, ArgMatches};
 use conllx::io::{ReadSentence, Reader, WriteSentence, Writer};
 use stdinout::{Input, OrExit, Output};
-use sticker::config::{Config, TomlRead};
-use sticker::encoders::Encoders;
 use sticker::input::WordPieceTokenizer;
-use sticker::model::BertModel;
 use sticker::tagger::Tagger;
-use tch::nn::VarStore;
 use tch::{self, Device};
 
 use crate::progress::TaggerSpeed;
 use crate::sent_proc::SentProcessor;
+use crate::tagger::load_tagger;
 use crate::traits::{StickerApp, DEFAULT_CLAP_SETTINGS};
 
 const BATCH_SIZE: &str = "BATCH_SIZE";
@@ -150,52 +146,7 @@ impl StickerApp for AnnotateApp {
     }
 
     fn run(&self) {
-        let config_file = File::open(&self.config).or_exit(
-            format!("Cannot open configuration file '{}'", &self.config),
-            1,
-        );
-        let mut config =
-            Config::from_toml_read(config_file).or_exit("Cannot parse configuration", 1);
-        config
-            .relativize_paths(&self.config)
-            .or_exit("Cannot relativize paths in configuration", 1);
-
-        let f = File::open(&config.labeler.labels).or_exit("Cannot open label file", 1);
-        let encoders: Encoders =
-            serde_yaml::from_reader(&f).or_exit("Cannot deserialize labels", 1);
-
-        for encoder in &*encoders {
-            eprintln!(
-                "Loaded labels for encoder '{}': {} labels",
-                encoder.name(),
-                encoder.encoder().len()
-            );
-        }
-
-        let tokenizer = config
-            .input
-            .word_piece_tokenizer()
-            .or_exit("Cannot read word pieces", 1);
-
-        let vectorizer = config
-            .input
-            .word_piece_vectorizer()
-            .or_exit("Cannot read word pieces", 1);
-
-        let bert_config = config
-            .model
-            .pretrain_config()
-            .or_exit("Cannot load pretraining model configuration", 1);
-
-        let mut vs = VarStore::new(self.device);
-
-        let model = BertModel::new(vs.root(), &bert_config, &encoders, 0.0)
-            .or_exit("Cannot construct model", 1);
-
-        vs.load(&config.model.parameters)
-            .or_exit("Cannot load model parameters", 1);
-
-        vs.freeze();
+        let (tokenizer, tagger) = load_tagger(&self.config, self.device);
 
         let input = Input::from(self.input.as_ref());
         let reader = Reader::new(input.buf_read().or_exit("Cannot open input for reading", 1));
@@ -205,7 +156,6 @@ impl StickerApp for AnnotateApp {
             output.write().or_exit("Cannot open output for writing", 1),
         ));
 
-        let tagger = Tagger::new(self.device, model, encoders, vectorizer);
         self.process(&tokenizer, tagger, reader, writer)
     }
 }

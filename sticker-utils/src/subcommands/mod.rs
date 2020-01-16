@@ -6,3 +6,6 @@ pub use finetune::FinetuneApp;
 
 mod prepare;
 pub use prepare::PrepareApp;
+
+mod server;
+pub use server::ServerApp;
