@@ -2,6 +2,8 @@ use std::io::stdout;
 
 use clap::{crate_version, App, AppSettings, Arg, Shell, SubCommand};
 
+pub mod io;
+
 pub mod progress;
 
 pub mod save;
@@ -9,8 +11,6 @@ pub mod save;
 pub mod sent_proc;
 
 mod subcommands;
-
-pub mod tagger;
 
 pub mod traits;
 use traits::StickerApp;
