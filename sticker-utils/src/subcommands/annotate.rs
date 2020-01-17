@@ -7,9 +7,9 @@ use sticker::input::WordPieceTokenizer;
 use sticker::tagger::Tagger;
 use tch::{self, Device};
 
+use crate::io::Model;
 use crate::progress::TaggerSpeed;
 use crate::sent_proc::SentProcessor;
-use crate::tagger::load_tagger;
 use crate::traits::{StickerApp, DEFAULT_CLAP_SETTINGS};
 
 const BATCH_SIZE: &str = "BATCH_SIZE";
@@ -146,7 +146,8 @@ impl StickerApp for AnnotateApp {
     }
 
     fn run(&self) {
-        let (tokenizer, tagger) = load_tagger(&self.config, self.device);
+        let model = Model::load(&self.config, self.device, true);
+        let tagger = Tagger::new(self.device, model.model, model.encoders, model.vectorizer);
 
         let input = Input::from(self.input.as_ref());
         let reader = Reader::new(input.buf_read().or_exit("Cannot open input for reading", 1));
@@ -156,6 +157,6 @@ impl StickerApp for AnnotateApp {
             output.write().or_exit("Cannot open output for writing", 1),
         ));
 
-        self.process(&tokenizer, tagger, reader, writer)
+        self.process(&model.tokenizer, tagger, reader, writer)
     }
 }

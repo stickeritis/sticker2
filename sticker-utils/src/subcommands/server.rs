@@ -11,9 +11,9 @@ use sticker::tagger::Tagger;
 use tch::Device;
 use threadpool::ThreadPool;
 
+use crate::io::Model;
 use crate::progress::TaggerSpeed;
 use crate::sent_proc::SentProcessor;
-use crate::tagger::load_tagger;
 use crate::traits::{StickerApp, DEFAULT_CLAP_SETTINGS};
 
 const ADDR: &str = "ADDR";
@@ -171,7 +171,8 @@ impl StickerApp for ServerApp {
     }
 
     fn run(&self) {
-        let (tokenizer, tagger) = load_tagger(&self.config, self.device);
+        let model = Model::load(&self.config, self.device, true);
+        let tagger = Tagger::new(self.device, model.model, model.encoders, model.vectorizer);
 
         let pool = ThreadPool::new(self.n_threads);
 
@@ -179,7 +180,7 @@ impl StickerApp for ServerApp {
             TcpListener::bind(&self.addr).or_exit(format!("Cannot listen on '{}'", self.addr), 1);
 
         self.serve(
-            Arc::new(tokenizer),
+            Arc::new(model.tokenizer),
             Arc::new(TaggerWrap(tagger)),
             pool,
             listener,

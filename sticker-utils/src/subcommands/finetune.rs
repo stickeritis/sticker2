@@ -5,9 +5,7 @@ use clap::{App, Arg, ArgMatches};
 use failure::Fallible;
 use indicatif::ProgressStyle;
 use ordered_float::NotNan;
-use serde_yaml;
 use stdinout::OrExit;
-use sticker::config::{Config, TomlRead};
 use sticker::dataset::{ConllxDataSet, DataSet};
 use sticker::encoders::Encoders;
 use sticker::input::vectorizer::WordPieceVectorizer;
@@ -16,15 +14,16 @@ use sticker::lr::{ExponentialDecay, LearningRateSchedule, PlateauLearningRate};
 use sticker::model::BertModel;
 use sticker::optimizers::{AdamW, AdamWConfig};
 use sticker::util::seq_len_to_mask;
-use tch::nn::VarStore;
 use tch::{self, Device, Kind};
 
+use crate::io::Model;
 use crate::progress::ReadProgress;
 use crate::save::{BestEpochSaver, CompletedUnit, Save};
 use crate::traits::{StickerApp, DEFAULT_CLAP_SETTINGS};
 
 const BATCH_SIZE: &str = "BATCH_SIZE";
 const CONFIG: &str = "CONFIG";
+const CONTINUE: &str = "CONTINUE";
 const GPU: &str = "GPU";
 const FINETUNE_EMBEDS: &str = "FINETUNE_EMBEDS";
 const INITIAL_LR_CLASSIFIER: &str = "INITIAL_LR_CLASSIFIER";
@@ -54,6 +53,7 @@ pub struct LrSchedule {
 pub struct FinetuneApp {
     batch_size: usize,
     config: String,
+    continue_finetune: bool,
     device: Device,
     finetune_embeds: bool,
     max_len: Option<usize>,
@@ -256,6 +256,11 @@ impl StickerApp for FinetuneApp {
                     .required(true),
             )
             .arg(
+                Arg::with_name(CONTINUE)
+                    .long("continue")
+                    .help("Continue training a sticker model"),
+            )
+            .arg(
                 Arg::with_name(PRETRAINED_MODEL)
                     .help("Pretrained model in HDF5 format")
                     .index(2)
@@ -386,6 +391,7 @@ impl StickerApp for FinetuneApp {
             .unwrap()
             .parse()
             .or_exit("Cannot parse batch size", 1);
+        let continue_finetune = matches.is_present(CONTINUE);
         let device = match matches.value_of("GPU") {
             Some(gpu) => Device::Cuda(
                 gpu.parse()
@@ -447,6 +453,7 @@ impl StickerApp for FinetuneApp {
         FinetuneApp {
             batch_size,
             config,
+            continue_finetune,
             device,
             finetune_embeds,
             max_len,
@@ -470,69 +477,18 @@ impl StickerApp for FinetuneApp {
     }
 
     fn run(&self) {
-        let config_file = File::open(&self.config).or_exit(
-            format!("Cannot open configuration file '{}'", &self.config),
-            1,
-        );
-        let mut config =
-            Config::from_toml_read(config_file).or_exit("Cannot parse configuration", 1);
-        config
-            .relativize_paths(&self.config)
-            .or_exit("Cannot relativize paths in configuration", 1);
+        let model = if self.continue_finetune {
+            Model::load_from(&self.config, &self.pretrained_model, self.device, false)
+        } else {
+            Model::load_from_hdf5(&self.config, &self.pretrained_model, self.device)
+        };
 
         let mut train_file = File::open(&self.train_data).or_exit("Cannot open train data file", 1);
         let mut validation_file =
             File::open(&self.validation_data).or_exit("Cannot open validation data file", 1);
 
-        let f = File::open(&config.labeler.labels).or_exit(
-            format!("Cannot open label file: {}", config.labeler.labels),
-            1,
-        );
-        let encoders: Encoders = serde_yaml::from_reader(&f).or_exit(
-            format!("Cannot deserialize labels from: {}", config.labeler.labels),
-            1,
-        );
-
-        for encoder in &*encoders {
-            eprintln!(
-                "Loaded labels for encoder '{}': {} labels",
-                encoder.name(),
-                encoder.encoder().len()
-            );
-        }
-
-        let tokenizer = config.input.word_piece_tokenizer().or_exit(
-            format!("Cannot read word pieces from: {}", config.input.word_pieces),
-            1,
-        );
-
-        let vectorizer = config.input.word_piece_vectorizer().or_exit(
-            format!("Cannot read word pieces from: {}", config.input.word_pieces),
-            1,
-        );
-
-        let bert_config = config.model.pretrain_config().or_exit(
-            format!(
-                "Cannot load pretraining model configuration from: {}",
-                config.model.pretrain_config
-            ),
-            1,
-        );
-
-        let vs = VarStore::new(self.device);
-
         let mut saver = self.saver.clone();
-
-        let model = BertModel::from_pretrained(
-            vs.root(),
-            &bert_config,
-            &self.pretrained_model,
-            &encoders,
-            0.5,
-        )
-        .or_exit("Cannot load pretrained model parameters", 1);
-
-        let mut opt = AdamW::new(&vs);
+        let mut opt = AdamW::new(&model.vs);
 
         let mut lr_schedules = self.lr_schedules();
 
@@ -553,10 +509,10 @@ impl StickerApp for FinetuneApp {
                 .compute_epoch_learning_rate(epoch, last_acc);
 
             self.run_epoch(
-                &encoders,
-                &tokenizer,
-                &vectorizer,
-                &model,
+                &model.encoders,
+                &model.tokenizer,
+                &model.vectorizer,
+                &model.model,
                 &mut train_file,
                 Some(&mut opt),
                 &mut lr_schedules,
@@ -567,10 +523,10 @@ impl StickerApp for FinetuneApp {
 
             last_acc = tch::no_grad(|| {
                 self.run_epoch(
-                    &encoders,
-                    &tokenizer,
-                    &vectorizer,
-                    &model,
+                    &model.encoders,
+                    &model.tokenizer,
+                    &model.vectorizer,
+                    &model.model,
                     &mut validation_file,
                     None,
                     &mut lr_schedules,
@@ -586,7 +542,7 @@ impl StickerApp for FinetuneApp {
             }
 
             saver
-                .save(&vs, CompletedUnit::Epoch(last_acc))
+                .save(&model.vs, CompletedUnit::Epoch(last_acc))
                 .or_exit("Error saving model", 1);
 
             let epoch_status = if best_epoch == epoch { "🎉" } else { "" };

@@ -5,10 +5,11 @@ use clap::{App, Arg, ArgMatches};
 use conllx::io::{ReadSentence, Reader};
 use serde_yaml;
 use stdinout::{Input, OrExit};
-use sticker::config::{Config, TomlRead};
+use sticker::config::Config;
 use sticker::encoders::Encoders;
 use sticker_encoders::SentenceEncoder;
 
+use crate::io::load_config;
 use crate::traits::{StickerApp, DEFAULT_CLAP_SETTINGS};
 
 const CONFIG: &str = "CONFIG";
@@ -51,15 +52,7 @@ impl StickerApp for PrepareApp {
     }
 
     fn run(&self) {
-        let config_file = File::open(&self.config).or_exit(
-            format!("Cannot open configuration file '{}'", &self.config),
-            1,
-        );
-        let mut config =
-            Config::from_toml_read(config_file).or_exit("Cannot parse configuration", 1);
-        config
-            .relativize_paths(&self.config)
-            .or_exit("Cannot relativize paths in configuration", 1);
+        let config = load_config(&self.config);
 
         let encoders: Encoders = (&config.labeler.encoders).into();
 
