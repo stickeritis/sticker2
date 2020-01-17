@@ -30,6 +30,7 @@ const FINETUNE_EMBEDS: &str = "FINETUNE_EMBEDS";
 const INITIAL_LR_CLASSIFIER: &str = "INITIAL_LR_CLASSIFIER";
 const INITIAL_LR_ENCODER: &str = "INITIAL_LR_ENCODER";
 const LABEL_SMOOTHING: &str = "LABEL_SMOOTHING";
+const INCLUDE_CONTINUATIONS: &str = "INCLUDE_CONTINUATIONS";
 const LR_DECAY_RATE: &str = "LR_DECAY_RATE";
 const LR_PATIENCE: &str = "LR_PATIENCE";
 const LR_SCALE: &str = "LR_SCALE";
@@ -57,6 +58,7 @@ pub struct FinetuneApp {
     finetune_embeds: bool,
     max_len: Option<usize>,
     label_smoothing: Option<f64>,
+    include_continuations: bool,
     lr_schedule: LrSchedule,
     patience: usize,
     pretrained_model: String,
@@ -172,6 +174,7 @@ impl FinetuneApp {
                 optimizer.is_some(),
                 !self.finetune_embeds || freeze_encoder,
                 freeze_encoder,
+                self.include_continuations,
             );
 
             let n_batch_tokens = i64::from(batch.token_mask.sum(Kind::Int64));
@@ -310,6 +313,11 @@ impl StickerApp for FinetuneApp {
                     .help("Distribute the given probability to non-target labels"),
             )
             .arg(
+                Arg::with_name(INCLUDE_CONTINUATIONS)
+                    .long("include-continuations")
+                    .help("Learn to predict continuation label for continuation word pieces"),
+            )
+            .arg(
                 Arg::with_name(MAX_LEN)
                     .long("maxlen")
                     .value_name("N")
@@ -403,6 +411,7 @@ impl StickerApp for FinetuneApp {
         let max_len = matches
             .value_of(MAX_LEN)
             .map(|v| v.parse().or_exit("Cannot parse maximum sentence length", 1));
+        let include_continuations = matches.is_present(INCLUDE_CONTINUATIONS);
         let lr_decay_rate = matches
             .value_of(LR_DECAY_RATE)
             .unwrap()
@@ -442,6 +451,7 @@ impl StickerApp for FinetuneApp {
             finetune_embeds,
             max_len,
             label_smoothing,
+            include_continuations,
             lr_schedule: LrSchedule {
                 initial_lr_classifier,
                 initial_lr_encoder,

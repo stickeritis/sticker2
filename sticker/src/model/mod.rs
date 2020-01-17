@@ -174,6 +174,7 @@ impl BertModel {
         train: bool,
         freeze_embeddings: bool,
         freeze_encoder: bool,
+        include_continuations: bool,
     ) -> (Tensor, HashMap<String, Tensor>, HashMap<String, Tensor>) {
         let encoding = self.encode(
             inputs,
@@ -191,7 +192,11 @@ impl BertModel {
         for (encoder_name, classifier) in &self.classifiers {
             let (loss, correct) =
                 classifier.losses(&encoding, &targets[encoder_name], label_smoothing, train);
-            let loss = (loss * &token_mask).sum(Kind::Float) / &token_mask_sum;
+            let loss = if include_continuations {
+                (loss * attention_mask).sum(Kind::Float) / &attention_mask.sum(Kind::Float)
+            } else {
+                (loss * &token_mask).sum(Kind::Float) / &token_mask_sum
+            };
             let acc = (correct * &token_mask).sum(Kind::Float) / &token_mask_sum;
 
             encoder_specific_loss.insert(encoder_name.clone(), loss);
