@@ -4,12 +4,14 @@ use std::path;
 
 use failure::Fallible;
 use hdf5::File;
-use sticker_transformers::bert_model::{
-    BertConfig, BertEmbeddings, BertEncoder, BertError, BertLayerOutput,
-};
 use sticker_transformers::hdf5_model::LoadFromHDF5;
 use sticker_transformers::layers::Dropout;
-use sticker_transformers::scalar_weighting::ScalarWeightClassifier;
+use sticker_transformers::models::bert::{
+    BertConfig, BertEmbeddings, BertEncoder, BertError, BertLayerOutput,
+};
+use sticker_transformers::scalar_weighting::{
+    ScalarWeightClassifier, ScalarWeightClassifierConfig,
+};
 use tch::nn::{ModuleT, Path};
 use tch::{self, Kind, Tensor};
 
@@ -37,7 +39,7 @@ impl BertModel {
     ) -> Result<Self, BertError> {
         let vs = vs.borrow();
 
-        let embeddings = BertEmbeddings::new(vs.sub("encoder"), config);
+        let embeddings = BertEmbeddings::new(vs.sub("encoder"), config, true);
         let encoder = BertEncoder::new(vs.sub("encoder"), config)?;
 
         let classifiers = encoders
@@ -48,10 +50,15 @@ impl BertModel {
                     ScalarWeightClassifier::new(
                         vs.sub("classifiers")
                             .sub(format!("{}_classifier", encoder.name())),
-                        config.num_hidden_layers,
-                        config.hidden_size,
-                        encoder.encoder().len() as i64,
-                        0.1,
+                        &ScalarWeightClassifierConfig {
+                            dropout_prob: config.hidden_dropout_prob,
+                            hidden_size: config.hidden_size,
+                            input_size: config.hidden_size,
+                            layer_dropout_prob: 0.1,
+                            layer_norm_eps: config.layer_norm_eps,
+                            n_layers: config.num_hidden_layers,
+                            n_labels: encoder.encoder().len() as i64,
+                        },
                     ),
                 )
             })
@@ -100,10 +107,15 @@ impl BertModel {
                     ScalarWeightClassifier::new(
                         vs.sub("classifiers")
                             .sub(format!("{}_classifier", encoder.name())),
-                        config.num_hidden_layers,
-                        config.hidden_size,
-                        encoder.encoder().len() as i64,
-                        0.1,
+                        &ScalarWeightClassifierConfig {
+                            dropout_prob: config.hidden_dropout_prob,
+                            hidden_size: config.hidden_size,
+                            input_size: config.hidden_size,
+                            layer_dropout_prob: 0.1,
+                            layer_norm_eps: config.layer_norm_eps,
+                            n_layers: config.num_hidden_layers,
+                            n_labels: encoder.encoder().len() as i64,
+                        },
                     ),
                 )
             })

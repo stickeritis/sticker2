@@ -6,7 +6,7 @@ use sticker::encoders::Encoders;
 use sticker::input::vectorizer::WordPieceVectorizer;
 use sticker::input::WordPieceTokenizer;
 use sticker::model::BertModel;
-use sticker_transformers::bert_model::BertConfig;
+use sticker_transformers::models::bert::BertConfig;
 use tch::nn::VarStore;
 use tch::Device;
 

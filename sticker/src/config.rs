@@ -6,7 +6,7 @@ use std::path::Path;
 use failure::{format_err, Fallible};
 use serde::{Deserialize, Serialize};
 use serde_json;
-use sticker_transformers::bert_model::BertConfig;
+use sticker_transformers::models::bert::BertConfig;
 use toml;
 use wordpieces::WordPieces;
 
