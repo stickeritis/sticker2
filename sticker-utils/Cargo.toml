@@ -13,6 +13,7 @@ clap = "2"
 conllx = "0.12.1"
 failure = "0.1"
 indicatif = "0.13"
+itertools = "0.8"
 ordered-float = { version = "1", features = ["serde"] }
 serde_yaml = "0.8"
 stdinout = "0.4"
