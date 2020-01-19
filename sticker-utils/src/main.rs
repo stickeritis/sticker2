@@ -15,6 +15,8 @@ mod subcommands;
 pub mod traits;
 use traits::StickerApp;
 
+pub mod util;
+
 static DEFAULT_CLAP_SETTINGS: &[AppSettings] = &[
     AppSettings::DontCollapseArgsInUsage,
     AppSettings::UnifiedHelpMessage,
@@ -25,6 +27,7 @@ fn main() {
     // Known subapplications.
     let apps = vec![
         subcommands::AnnotateApp::app(),
+        subcommands::DistillApp::app(),
         subcommands::FinetuneApp::app(),
         subcommands::PrepareApp::app(),
         subcommands::ServerApp::app(),
@@ -54,6 +57,9 @@ fn main() {
                 .value_of("shell")
                 .unwrap();
             write_completion_script(cli, shell.parse::<Shell>().unwrap());
+        }
+        "distill" => {
+            subcommands::DistillApp::parse(matches.subcommand_matches("distill").unwrap()).run()
         }
         "finetune" => {
             subcommands::FinetuneApp::parse(matches.subcommand_matches("finetune").unwrap()).run()

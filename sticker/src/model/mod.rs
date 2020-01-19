@@ -198,6 +198,41 @@ impl BertModel {
         encoded
     }
 
+    /// Compute the logits for a batch of inputs.
+    ///
+    /// * `attention_mask`: specifies which sequence elements should
+    ///    be masked when applying the encoder.
+    /// * `train`: indicates whether this forward pass will be used
+    ///   for backpropagation.
+    /// * `freeze_embeddings`: exclude embeddings from backpropagation.
+    /// * `freeze_encoder`: exclude the encoder from backpropagation.
+    pub fn logits(
+        &self,
+        inputs: &Tensor,
+        attention_mask: &Tensor,
+        train: bool,
+        freeze_embeddings: bool,
+        freeze_encoder: bool,
+    ) -> HashMap<String, Tensor> {
+        let encoding = self.encode(
+            inputs,
+            attention_mask,
+            train,
+            freeze_embeddings,
+            freeze_encoder,
+        );
+
+        self.classifiers
+            .iter()
+            .map(|(encoder_name, classifier)| {
+                (
+                    encoder_name.to_string(),
+                    classifier.logits(&encoding, train),
+                )
+            })
+            .collect()
+    }
+
     /// Compute the loss given a batch of inputs and target labels.
     ///
     /// * `attention_mask`: specifies which sequence elements should
