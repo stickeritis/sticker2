@@ -55,6 +55,9 @@ pub struct Model {
     /// Model parameters.
     pub parameters: String,
 
+    /// Configuration of position embeddings.
+    pub position_embeddings: PositionEmbeddings,
+
     /// Configuration of the pretrained model.
     pub pretrain_config: String,
 }
@@ -65,6 +68,16 @@ impl Model {
         let f = File::open(&self.pretrain_config)?;
         Ok(serde_json::from_reader(BufReader::new(f))?)
     }
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum PositionEmbeddings {
+    /// Use position embeddings from the model.
+    Model,
+
+    /// Use generated sinusoidal embeddings.
+    Sinusoidal,
 }
 
 /// Sequence labeler configuration.
@@ -153,7 +166,7 @@ mod tests {
     use sticker_encoders::layer::Layer;
     use sticker_encoders::lemma::BackoffStrategy;
 
-    use crate::config::{Config, Input, Labeler, Model, TomlRead};
+    use crate::config::{Config, Input, Labeler, Model, PositionEmbeddings, TomlRead};
     use crate::encoders::{DependencyEncoder, EncoderType, EncodersConfig, NamedEncoderConfig};
 
     #[test]
@@ -186,6 +199,7 @@ mod tests {
                 },
                 model: Model {
                     parameters: "epoch-99".to_string(),
+                    position_embeddings: PositionEmbeddings::Model,
                     pretrain_config: "bert_config.json".to_string(),
                 }
             }
