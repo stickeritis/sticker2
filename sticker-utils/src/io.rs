@@ -50,8 +50,14 @@ impl Model {
 
         let mut vs = VarStore::new(device);
 
-        let model = BertModel::new(vs.root(), &bert_config, &encoders, 0.0)
-            .or_exit("Cannot construct model", 1);
+        let model = BertModel::new(
+            vs.root(),
+            &bert_config,
+            &encoders,
+            0.0,
+            config.model.position_embeddings,
+        )
+        .or_exit("Cannot construct model", 1);
 
         vs.load(parameters_path)
             .or_exit("Cannot load model parameters", 1);

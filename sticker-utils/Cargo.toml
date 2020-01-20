@@ -18,6 +18,6 @@ serde_yaml = "0.8"
 stdinout = "0.4"
 sticker = { path = "../sticker" }
 sticker-encoders = "0.1.4"
-sticker-transformers = "0.2"
-tch = "0.1.3"
+sticker-transformers = "0.3"
+tch = "0.1.5"
 threadpool = "1"

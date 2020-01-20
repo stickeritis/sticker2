@@ -9,18 +9,54 @@ use sticker_transformers::layers::Dropout;
 use sticker_transformers::models::bert::{
     BertConfig, BertEmbeddings, BertEncoder, BertError, BertLayerOutput,
 };
+use sticker_transformers::models::sinusoidal::SinusoidalEmbeddings;
 use sticker_transformers::scalar_weighting::{
     ScalarWeightClassifier, ScalarWeightClassifierConfig,
 };
 use tch::nn::{ModuleT, Path};
 use tch::{self, Kind, Tensor};
 
+use crate::config::PositionEmbeddings;
 use crate::encoders::Encoders;
+
+#[derive(Debug)]
+enum BertEmbeddingLayer {
+    Bert(BertEmbeddings),
+    Sinusoidal(SinusoidalEmbeddings),
+}
+
+impl BertEmbeddingLayer {
+    fn new<'a>(
+        vs: impl Borrow<Path<'a>>,
+        config: &BertConfig,
+        position_embeddings: PositionEmbeddings,
+    ) -> Self {
+        match position_embeddings {
+            PositionEmbeddings::Model => {
+                BertEmbeddingLayer::Bert(BertEmbeddings::new(vs, config, true))
+            }
+            PositionEmbeddings::Sinusoidal => {
+                BertEmbeddingLayer::Sinusoidal(SinusoidalEmbeddings::new(vs, config))
+            }
+        }
+    }
+}
+
+impl ModuleT for BertEmbeddingLayer {
+    fn forward_t(&self, input: &Tensor, train: bool) -> Tensor {
+        use BertEmbeddingLayer::*;
+
+        match self {
+            Bert(ref embeddings) => embeddings.forward_t(input, train),
+            Sinusoidal(ref embeddings) => embeddings.forward_t(input, train),
+        }
+    }
+}
 
 /// Multi-task classifier using the BERT architecture with scalar weighting.
 #[derive(Debug)]
 pub struct BertModel {
-    embeddings: BertEmbeddings,
+    embeddings: BertEmbeddingLayer,
     encoder: BertEncoder,
     classifiers: HashMap<String, ScalarWeightClassifier>,
     layers_dropout: Dropout,
@@ -36,10 +72,11 @@ impl BertModel {
         config: &BertConfig,
         encoders: &Encoders,
         layers_dropout: f64,
+        position_embeddings: PositionEmbeddings,
     ) -> Result<Self, BertError> {
         let vs = vs.borrow();
 
-        let embeddings = BertEmbeddings::new(vs.sub("encoder"), config, true);
+        let embeddings = BertEmbeddingLayer::new(vs, config, position_embeddings);
         let encoder = BertEncoder::new(vs.sub("encoder"), config)?;
 
         let classifiers = encoders
@@ -87,11 +124,11 @@ impl BertModel {
 
         let pretrained_file = File::open(hdf_path, "r")?;
 
-        let embeddings = BertEmbeddings::load_from_hdf5(
+        let embeddings = BertEmbeddingLayer::Bert(BertEmbeddings::load_from_hdf5(
             vs.sub("encoder"),
             config,
             pretrained_file.group("bert/embeddings")?,
-        )?;
+        )?);
 
         let encoder = BertEncoder::load_from_hdf5(
             vs.sub("encoder"),
@@ -139,9 +176,9 @@ impl BertModel {
         freeze_encoder: bool,
     ) -> Vec<BertLayerOutput> {
         let embeds = if freeze_embeddings {
-            tch::no_grad(|| self.embeddings.forward_t(inputs, None, None, train))
+            tch::no_grad(|| self.embeddings.forward_t(inputs, train))
         } else {
-            self.embeddings.forward_t(inputs, None, None, train)
+            self.embeddings.forward_t(inputs, train)
         };
 
         let mut encoded = if freeze_encoder {
