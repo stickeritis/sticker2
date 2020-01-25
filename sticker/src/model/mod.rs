@@ -76,7 +76,7 @@ impl BertModel {
     ) -> Result<Self, BertError> {
         let vs = vs.borrow();
 
-        let embeddings = BertEmbeddingLayer::new(vs, config, position_embeddings);
+        let embeddings = BertEmbeddingLayer::new(vs.sub("encoder"), config, position_embeddings);
         let encoder = BertEncoder::new(vs.sub("encoder"), config)?;
 
         let classifiers = encoders
