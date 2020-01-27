@@ -6,8 +6,8 @@ use std::sync::Arc;
 use clap::{App, Arg, ArgMatches};
 use conllx::io::{ReadSentence, Reader, Writer};
 use stdinout::OrExit;
-use sticker::input::WordPieceTokenizer;
-use sticker::tagger::Tagger;
+use sticker2::input::WordPieceTokenizer;
+use sticker2::tagger::Tagger;
 use tch::Device;
 use threadpool::ThreadPool;
 

@@ -1,8 +1,8 @@
 [package]
-name = "sticker"
-version = "0.10.0"
+name = "sticker2"
+version = "0.1.0"
 edition = "2018"
-authors = ["Daniël de Kok <me@stickeritis.eu>"]
+authors = ["Daniël de Kok <me@danieldk.eu>"]
 description = "Neural sequence labeler"
 documentation = "https://github.com/stickeritis/sticker"
 homepage = "https://github.com/stickeritis/sticker"

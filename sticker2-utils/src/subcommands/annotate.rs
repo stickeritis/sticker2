@@ -3,8 +3,8 @@ use std::io::BufWriter;
 use clap::{App, Arg, ArgMatches};
 use conllx::io::{ReadSentence, Reader, WriteSentence, Writer};
 use stdinout::{Input, OrExit, Output};
-use sticker::input::WordPieceTokenizer;
-use sticker::tagger::Tagger;
+use sticker2::input::WordPieceTokenizer;
+use sticker2::tagger::Tagger;
 use tch::{self, Device};
 
 use crate::io::Model;

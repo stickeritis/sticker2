@@ -972,29 +972,6 @@ version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
-name = "sticker"
-version = "0.10.0"
-dependencies = [
- "approx 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "conllx 0.12.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "edit_tree 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "failure 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
- "hdf5 0.5.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "maplit 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "ndarray 0.13.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "numberer 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "rand 0.7.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "rand_xorshift 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde_json 1.0.44 (registry+https://github.com/rust-lang/crates.io-index)",
- "sticker-encoders 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
- "sticker-transformers 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "tch 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
- "toml 0.5.5 (registry+https://github.com/rust-lang/crates.io-index)",
- "wordpieces 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
 name = "sticker-encoders"
 version = "0.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1021,7 +998,30 @@ dependencies = [
 ]
 
 [[package]]
-name = "sticker-utils"
+name = "sticker2"
+version = "0.1.0"
+dependencies = [
+ "approx 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "conllx 0.12.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "edit_tree 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "failure 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "hdf5 0.5.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "maplit 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "ndarray 0.13.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "numberer 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rand 0.7.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rand_xorshift 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde_json 1.0.44 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sticker-encoders 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sticker-transformers 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "tch 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "toml 0.5.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "wordpieces 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "sticker2-utils"
 version = "0.1.0"
 dependencies = [
  "clap 2.33.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1032,9 +1032,9 @@ dependencies = [
  "ordered-float 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_yaml 0.8.11 (registry+https://github.com/rust-lang/crates.io-index)",
  "stdinout 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "sticker 0.10.0",
  "sticker-encoders 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "sticker-transformers 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sticker2 0.1.0",
  "tch 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "threadpool 1.7.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
