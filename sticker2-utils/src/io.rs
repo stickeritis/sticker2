@@ -1,11 +1,11 @@
 use std::fs::File;
 
 use stdinout::OrExit;
-use sticker::config::{Config, TomlRead};
-use sticker::encoders::Encoders;
-use sticker::input::vectorizer::WordPieceVectorizer;
-use sticker::input::WordPieceTokenizer;
-use sticker::model::BertModel;
+use sticker2::config::{Config, TomlRead};
+use sticker2::encoders::Encoders;
+use sticker2::input::vectorizer::WordPieceVectorizer;
+use sticker2::input::WordPieceTokenizer;
+use sticker2::model::BertModel;
 use sticker_transformers::models::bert::BertConfig;
 use tch::nn::VarStore;
 use tch::Device;

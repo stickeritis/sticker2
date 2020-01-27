@@ -5,8 +5,8 @@ use clap::{App, Arg, ArgMatches};
 use conllx::io::{ReadSentence, Reader};
 use serde_yaml;
 use stdinout::{Input, OrExit};
-use sticker::config::Config;
-use sticker::encoders::Encoders;
+use sticker2::config::Config;
+use sticker2::encoders::Encoders;
 use sticker_encoders::SentenceEncoder;
 
 use crate::io::load_config;

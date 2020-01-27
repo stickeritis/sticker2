@@ -2,8 +2,8 @@ use conllx::graph::Sentence;
 use conllx::io::WriteSentence;
 use failure::Fallible;
 
-use sticker::input::{SentenceWithPieces, Tokenize, WordPieceTokenizer};
-use sticker::tagger::Tagger;
+use sticker2::input::{SentenceWithPieces, Tokenize, WordPieceTokenizer};
+use sticker2::tagger::Tagger;
 
 pub struct SentProcessor<'a, W>
 where
