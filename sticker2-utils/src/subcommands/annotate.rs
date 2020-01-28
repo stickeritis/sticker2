@@ -69,16 +69,11 @@ impl StickerApp for AnnotateApp {
                     .index(1)
                     .required(true),
             )
-            .arg(
-                Arg::with_name(INPUT)
-                    .help("Input data")
-                    .long("input")
-                    .takes_value(true),
-            )
+            .arg(Arg::with_name(INPUT).help("Input data").index(2))
             .arg(
                 Arg::with_name(OUTPUT)
                     .help("Output data")
-                    .long("output")
+                    .index(3)
                     .takes_value(true),
             )
             .arg(
