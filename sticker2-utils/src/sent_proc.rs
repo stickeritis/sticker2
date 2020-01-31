@@ -15,7 +15,7 @@ where
     batch_size: usize,
     max_len: Option<usize>,
     read_ahead: usize,
-    buffer: Vec<SentenceWithPieces<String>>,
+    buffer: Vec<SentenceWithPieces>,
 }
 
 impl<'a, W> SentProcessor<'a, W>

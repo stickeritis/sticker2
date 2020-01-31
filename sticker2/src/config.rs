@@ -11,7 +11,6 @@ use toml;
 use wordpieces::WordPieces;
 
 use crate::encoders::EncodersConfig;
-use crate::input::vectorizer::{ReadWordPieces, WordPieceVectorizer};
 use crate::input::WordPieceTokenizer;
 
 /// Input configuration.
@@ -28,12 +27,6 @@ impl Input {
         let f = File::open(&self.word_pieces)?;
         let pieces = WordPieces::try_from(BufReader::new(f).lines())?;
         Ok(WordPieceTokenizer::new(pieces, "[UNK]"))
-    }
-
-    /// Construct a word piece vectorizer.
-    pub fn word_piece_vectorizer(&self) -> Fallible<WordPieceVectorizer> {
-        let f = File::open(&self.word_pieces)?;
-        Ok(WordPieceVectorizer::read_word_pieces(BufReader::new(f))?)
     }
 }
 

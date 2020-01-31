@@ -26,7 +26,7 @@ sticker-encoders = "0.1.4"
 sticker-transformers = "0.3"
 tch = "0.1.5"
 toml = "0.5"
-wordpieces = "0.1.1"
+wordpieces = "0.2"
 
 [dev-dependencies]
 approx = "0.3"

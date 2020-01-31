@@ -1,30 +1,23 @@
 use conllx::graph::{Node, Sentence};
-use wordpieces::{WordPiece, WordPieces};
-
-pub mod vectorizer;
+use ndarray::Array1;
+use wordpieces::WordPieces;
 
 /// Trait for wordpiece tokenizers.
 pub trait Tokenize {
     /// Tokenize the tokens in a sentence into word pieces.
-    fn tokenize(self, tokenizer: &WordPieceTokenizer) -> SentenceWithPieces<String>;
+    fn tokenize(self, tokenizer: &WordPieceTokenizer) -> SentenceWithPieces;
 }
 
 impl Tokenize for Sentence {
-    fn tokenize(self, tokenizer: &WordPieceTokenizer) -> SentenceWithPieces<String> {
-        let (pieces, token_offsets) = tokenizer.tokenize(&self);
-
-        SentenceWithPieces {
-            pieces,
-            sentence: self,
-            token_offsets,
-        }
+    fn tokenize(self, tokenizer: &WordPieceTokenizer) -> SentenceWithPieces {
+        tokenizer.tokenize(self)
     }
 }
 
 /// A sentence and its word pieces.
-pub struct SentenceWithPieces<T> {
+pub struct SentenceWithPieces {
     /// Word pieces in a sentence.
-    pub pieces: Vec<T>,
+    pub pieces: Array1<i64>,
 
     /// Sentence graph.
     pub sentence: Sentence,
@@ -70,7 +63,7 @@ impl WordPieceTokenizer {
     ///
     /// The offset at position 0 represents the first word (and not the
     /// special *ROOT* token).
-    pub fn tokenize(&self, sentence: &Sentence) -> (Vec<String>, Vec<usize>) {
+    pub fn tokenize(&self, sentence: Sentence) -> SentenceWithPieces {
         // An average of three pieces per token ought to enough for
         // everyone ;).
         let mut pieces = Vec::with_capacity((sentence.len() - 1) * 3);
@@ -82,65 +75,23 @@ impl WordPieceTokenizer {
             match self
                 .word_pieces
                 .split(token.form())
-                .add_continuation_markers("##")
+                .map(|piece| piece.idx().map(|piece| piece as i64))
                 .collect::<Option<Vec<_>>>()
             {
                 Some(word_pieces) => pieces.extend(word_pieces),
-                None => pieces.push(self.unknown_piece.clone()),
+                None => pieces.push(
+                    self.word_pieces
+                        .get_initial(&self.unknown_piece)
+                        .expect("Cannot get unknown piece") as i64,
+                ),
             }
         }
 
-        (pieces, token_offsets)
-    }
-}
-
-/// Add continuation markers for every piece except the first.
-trait AddContinuationMarkers {
-    type Iter;
-
-    /// Return an iterator that adds continuation markers.
-    fn add_continuation_markers(self, marker: impl Into<String>) -> Self::Iter;
-}
-
-impl<'a, I> AddContinuationMarkers for I
-where
-    I: Iterator<Item = WordPiece<'a>>,
-{
-    type Iter = ContinuationMarkerIter<I>;
-
-    fn add_continuation_markers(self, marker: impl Into<String>) -> Self::Iter {
-        ContinuationMarkerIter {
-            initial: true,
-            inner: self,
-            marker: marker.into(),
+        SentenceWithPieces {
+            pieces: pieces.into(),
+            sentence,
+            token_offsets,
         }
-    }
-}
-
-struct ContinuationMarkerIter<I> {
-    initial: bool,
-    inner: I,
-    marker: String,
-}
-
-impl<'a, I> Iterator for ContinuationMarkerIter<I>
-where
-    I: Iterator<Item = WordPiece<'a>>,
-{
-    type Item = Option<String>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let item = self.inner.next()?;
-
-        let item = if self.initial {
-            self.initial = false;
-            item.piece().map(ToOwned::to_owned)
-        } else {
-            item.piece()
-                .map(|piece| format!("{}{}", self.marker, piece))
-        };
-
-        Some(item)
     }
 }
 
@@ -153,6 +104,7 @@ mod tests {
 
     use conllx::graph::Sentence;
     use conllx::token::Token;
+    use ndarray::array;
     use wordpieces::WordPieces;
 
     use super::WordPieceTokenizer;
@@ -172,11 +124,11 @@ mod tests {
 
         let sentence = sentence_from_forms(&["Veruntreute", "die", "AWO", "Spendengeld", "?"]);
 
-        let (pieces, offsets) = tokenizer.tokenize(&sentence);
+        let sentence_pieces = tokenizer.tokenize(sentence);
         assert_eq!(
-            pieces,
-            &["Ver", "##unt", "##reute", "die", "A", "##W", "##O", "Spenden", "##geld", "[UNK]"]
+            sentence_pieces.pieces,
+            array![133i64, 1937, 14010, 30, 32, 26939, 26962, 12558, 2739, 2]
         );
-        assert_eq!(offsets, &[0, 3, 4, 7, 9]);
+        assert_eq!(sentence_pieces.token_offsets, &[0, 3, 4, 7, 9]);
     }
 }

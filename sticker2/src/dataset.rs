@@ -9,7 +9,6 @@ use rand_xorshift::XorShiftRng;
 use sticker_encoders::SentenceEncoder;
 
 use crate::encoders::NamedEncoder;
-use crate::input::vectorizer::WordPieceVectorizer;
 use crate::input::{SentenceWithPieces, Tokenize, WordPieceTokenizer};
 use crate::tensor::{NoLabels, TensorBuilder, Tensors};
 use crate::util::RandomRemoveVec;
@@ -34,7 +33,6 @@ pub trait DataSet<'a> {
         self,
         encoders: &'a [NamedEncoder],
         tokenizer: &'a WordPieceTokenizer,
-        vectorizer: &'a WordPieceVectorizer,
         batch_size: usize,
         max_len: Option<usize>,
         shuffle_buffer_size: Option<usize>,
@@ -63,7 +61,7 @@ impl<R> ConllxDataSet<R> {
         tokenizer: &'a WordPieceTokenizer,
         max_len: Option<usize>,
         shuffle_buffer_size: Option<usize>,
-    ) -> Box<dyn Iterator<Item = Fallible<SentenceWithPieces<String>>> + 'ds>
+    ) -> Box<dyn Iterator<Item = Fallible<SentenceWithPieces>> + 'ds>
     where
         R: ReadSentence + 'ds,
     {
@@ -88,14 +86,12 @@ impl<'ds, 'a: 'ds, R> DataSet<'a> for &'ds mut ConllxDataSet<R>
 where
     R: Read + Seek,
 {
-    type Iter =
-        ConllxIter<'a, Box<dyn Iterator<Item = Fallible<SentenceWithPieces<String>>> + 'ds>>;
+    type Iter = ConllxIter<'a, Box<dyn Iterator<Item = Fallible<SentenceWithPieces>> + 'ds>>;
 
     fn batches(
         self,
         encoders: &'a [NamedEncoder],
         tokenizer: &'a WordPieceTokenizer,
-        vectorizer: &'a WordPieceVectorizer,
         batch_size: usize,
         max_len: Option<usize>,
         shuffle_buffer_size: Option<usize>,
@@ -116,29 +112,27 @@ where
                 max_len,
                 shuffle_buffer_size,
             ),
-            vectorizer,
         })
     }
 }
 
 pub struct ConllxIter<'a, I>
 where
-    I: Iterator<Item = Fallible<SentenceWithPieces<String>>>,
+    I: Iterator<Item = Fallible<SentenceWithPieces>>,
 {
     batch_size: usize,
     labels: bool,
     encoders: &'a [NamedEncoder],
-    vectorizer: &'a WordPieceVectorizer,
     sentences: I,
 }
 
 impl<'a, I> ConllxIter<'a, I>
 where
-    I: Iterator<Item = Fallible<SentenceWithPieces<String>>>,
+    I: Iterator<Item = Fallible<SentenceWithPieces>>,
 {
     fn next_with_labels(
         &mut self,
-        tokenized_sentences: Vec<SentenceWithPieces<String>>,
+        tokenized_sentences: Vec<SentenceWithPieces>,
         max_seq_len: usize,
     ) -> Option<Fallible<Tensors>> {
         let mut builder = TensorBuilder::new(
@@ -148,7 +142,7 @@ where
         );
 
         for sentence in tokenized_sentences {
-            let input = self.vectorizer.vectorize(&sentence.pieces);
+            let input = sentence.pieces;
             let mut token_mask = Array1::zeros((input.len(),));
             for token_idx in &sentence.token_offsets {
                 token_mask[*token_idx] = 1;
@@ -177,7 +171,7 @@ where
 
     fn next_without_labels(
         &mut self,
-        tokenized_sentences: Vec<SentenceWithPieces<String>>,
+        tokenized_sentences: Vec<SentenceWithPieces>,
         max_seq_len: usize,
     ) -> Option<Fallible<Tensors>> {
         let mut builder: TensorBuilder<NoLabels> = TensorBuilder::new(
@@ -187,7 +181,7 @@ where
         );
 
         for sentence in tokenized_sentences {
-            let input = self.vectorizer.vectorize(&sentence.pieces);
+            let input = sentence.pieces;
             let mut token_mask = Array1::zeros((input.len(),));
             for token_idx in &sentence.token_offsets {
                 token_mask[*token_idx] = 1;
@@ -202,7 +196,7 @@ where
 
 impl<'a, I> Iterator for ConllxIter<'a, I>
 where
-    I: Iterator<Item = Fallible<SentenceWithPieces<String>>>,
+    I: Iterator<Item = Fallible<SentenceWithPieces>>,
 {
     type Item = Fallible<Tensors>;
 
@@ -246,7 +240,7 @@ pub trait SentenceIter: Sized {
 
 impl<I> SentenceIter for I
 where
-    I: Iterator<Item = Fallible<SentenceWithPieces<String>>>,
+    I: Iterator<Item = Fallible<SentenceWithPieces>>,
 {
     fn filter_by_len(self, max_len: usize) -> LengthFilter<Self> {
         LengthFilter {
@@ -272,9 +266,9 @@ pub struct LengthFilter<I> {
 
 impl<I> Iterator for LengthFilter<I>
 where
-    I: Iterator<Item = Fallible<SentenceWithPieces<String>>>,
+    I: Iterator<Item = Fallible<SentenceWithPieces>>,
 {
-    type Item = Fallible<SentenceWithPieces<String>>;
+    type Item = Fallible<SentenceWithPieces>;
 
     fn next(&mut self) -> Option<Self::Item> {
         while let Some(sent) = self.inner.next() {
@@ -297,15 +291,15 @@ where
 /// and pick a random element from the buffer.
 pub struct Shuffled<I> {
     inner: I,
-    buffer: RandomRemoveVec<SentenceWithPieces<String>, XorShiftRng>,
+    buffer: RandomRemoveVec<SentenceWithPieces, XorShiftRng>,
     buffer_size: usize,
 }
 
 impl<I> Iterator for Shuffled<I>
 where
-    I: Iterator<Item = Fallible<SentenceWithPieces<String>>>,
+    I: Iterator<Item = Fallible<SentenceWithPieces>>,
 {
-    type Item = Fallible<SentenceWithPieces<String>>;
+    type Item = Fallible<SentenceWithPieces>;
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.buffer.is_empty() {
