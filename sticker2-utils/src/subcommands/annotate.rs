@@ -142,7 +142,7 @@ impl StickerApp for AnnotateApp {
 
     fn run(&self) {
         let model = Model::load(&self.config, self.device, true);
-        let tagger = Tagger::new(self.device, model.model, model.encoders, model.vectorizer);
+        let tagger = Tagger::new(self.device, model.model, model.encoders);
 
         let input = Input::from(self.input.as_ref());
         let reader = Reader::new(input.buf_read().or_exit("Cannot open input for reading", 1));

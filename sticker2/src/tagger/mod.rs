@@ -8,7 +8,6 @@ use sticker_encoders::{EncodingProb, SentenceDecoder};
 use tch::Device;
 
 use crate::encoders::Encoders;
-use crate::input::vectorizer::WordPieceVectorizer;
 use crate::input::SentenceWithPieces;
 use crate::model::BertModel;
 use crate::tensor::{NoLabels, TensorBuilder, Tensors};
@@ -19,29 +18,22 @@ pub struct Tagger {
     device: Device,
     encoders: Encoders,
     model: BertModel,
-    vectorizer: WordPieceVectorizer,
 }
 
 impl Tagger {
     /// Construct a new tagger.
-    pub fn new(
-        device: Device,
-        model: BertModel,
-        encoders: Encoders,
-        vectorizer: WordPieceVectorizer,
-    ) -> Self {
+    pub fn new(device: Device, model: BertModel, encoders: Encoders) -> Self {
         Tagger {
             device,
             model,
             encoders,
-            vectorizer,
         }
     }
 
     /// Tag sentences.
     pub fn tag_sentences(
         &self,
-        sentences: &mut [impl BorrowMut<SentenceWithPieces<String>>],
+        sentences: &mut [impl BorrowMut<SentenceWithPieces>],
     ) -> Fallible<()> {
         let top_k_numeric = self.top_k_numeric_(sentences)?;
 
@@ -60,10 +52,7 @@ impl Tagger {
     }
 
     /// Construct the tensor representations of a batch of sentences.
-    fn prepare_batch(
-        &self,
-        sentences: &[impl Borrow<SentenceWithPieces<String>>],
-    ) -> Fallible<Tensors> {
+    fn prepare_batch(&self, sentences: &[impl Borrow<SentenceWithPieces>]) -> Fallible<Tensors> {
         let max_seq_len = sentences
             .iter()
             .map(|sentence| sentence.borrow().pieces.len())
@@ -78,7 +67,7 @@ impl Tagger {
 
         for sentence in sentences {
             let sentence = sentence.borrow();
-            let input = self.vectorizer.vectorize(&sentence.pieces);
+            let input = sentence.pieces.view();
             let mut token_mask = Array1::zeros((input.len(),));
             for token_idx in &sentence.token_offsets {
                 token_mask[*token_idx] = 1;
@@ -97,7 +86,7 @@ impl Tagger {
         sentences: &'a [S],
     ) -> Fallible<Vec<HashMap<String, Vec<Vec<EncodingProb<usize>>>>>>
     where
-        S: Borrow<SentenceWithPieces<String>>,
+        S: Borrow<SentenceWithPieces>,
     {
         let tensors = self.prepare_batch(sentences)?;
 

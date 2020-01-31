@@ -172,7 +172,7 @@ impl StickerApp for ServerApp {
 
     fn run(&self) {
         let model = Model::load(&self.config, self.device, true);
-        let tagger = Tagger::new(self.device, model.model, model.encoders, model.vectorizer);
+        let tagger = Tagger::new(self.device, model.model, model.encoders);
 
         let pool = ThreadPool::new(self.n_threads);
 

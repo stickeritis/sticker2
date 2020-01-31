@@ -8,7 +8,6 @@ use ordered_float::NotNan;
 use stdinout::OrExit;
 use sticker2::dataset::{ConllxDataSet, DataSet};
 use sticker2::encoders::Encoders;
-use sticker2::input::vectorizer::WordPieceVectorizer;
 use sticker2::input::WordPieceTokenizer;
 use sticker2::lr::{ExponentialDecay, LearningRateSchedule, PlateauLearningRate};
 use sticker2::model::BertModel;
@@ -103,7 +102,6 @@ impl FinetuneApp {
         &self,
         encoders: &Encoders,
         tokenizer: &WordPieceTokenizer,
-        vectorizer: &WordPieceVectorizer,
         model: &BertModel,
         file: &mut File,
         mut optimizer: Option<&mut AdamW>,
@@ -137,7 +135,6 @@ impl FinetuneApp {
         for batch in dataset.batches(
             encoders,
             tokenizer,
-            vectorizer,
             self.batch_size,
             self.max_len,
             None,
@@ -511,7 +508,6 @@ impl StickerApp for FinetuneApp {
             self.run_epoch(
                 &model.encoders,
                 &model.tokenizer,
-                &model.vectorizer,
                 &model.model,
                 &mut train_file,
                 Some(&mut opt),
@@ -525,7 +521,6 @@ impl StickerApp for FinetuneApp {
                 self.run_epoch(
                     &model.encoders,
                     &model.tokenizer,
-                    &model.vectorizer,
                     &model.model,
                     &mut validation_file,
                     None,

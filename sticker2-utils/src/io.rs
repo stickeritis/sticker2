@@ -3,7 +3,6 @@ use std::fs::File;
 use stdinout::OrExit;
 use sticker2::config::{Config, TomlRead};
 use sticker2::encoders::Encoders;
-use sticker2::input::vectorizer::WordPieceVectorizer;
 use sticker2::input::WordPieceTokenizer;
 use sticker2::model::BertModel;
 use sticker_transformers::models::bert::BertConfig;
@@ -15,7 +14,6 @@ pub struct Model {
     pub encoders: Encoders,
     pub model: BertModel,
     pub tokenizer: WordPieceTokenizer,
-    pub vectorizer: WordPieceVectorizer,
     pub vs: VarStore,
 }
 
@@ -45,7 +43,7 @@ impl Model {
     ) -> Model {
         let config = load_config(config_path);
         let encoders = load_encoders(&config);
-        let (tokenizer, vectorizer) = load_tokenizer(&config);
+        let tokenizer = load_tokenizer(&config);
         let bert_config = load_bert_config(&config);
 
         let mut vs = VarStore::new(device);
@@ -70,7 +68,6 @@ impl Model {
             encoders,
             model,
             tokenizer,
-            vectorizer,
             vs,
         }
     }
@@ -83,7 +80,7 @@ impl Model {
     pub fn load_from_hdf5(config_path: &str, hdf5_path: &str, device: Device) -> Model {
         let config = load_config(config_path);
         let encoders = load_encoders(&config);
-        let (tokenizer, vectorizer) = load_tokenizer(&config);
+        let tokenizer = load_tokenizer(&config);
         let bert_config = load_bert_config(&config);
 
         let vs = VarStore::new(device);
@@ -95,7 +92,6 @@ impl Model {
             encoders,
             model,
             tokenizer,
-            vectorizer,
             vs,
         }
     }
@@ -143,16 +139,9 @@ fn load_encoders(config: &Config) -> Encoders {
     encoders
 }
 
-fn load_tokenizer(config: &Config) -> (WordPieceTokenizer, WordPieceVectorizer) {
-    let tokenizer = config
+fn load_tokenizer(config: &Config) -> WordPieceTokenizer {
+    config
         .input
         .word_piece_tokenizer()
-        .or_exit("Cannot read word pieces", 1);
-
-    let vectorizer = config
-        .input
-        .word_piece_vectorizer()
-        .or_exit("Cannot read word pieces", 1);
-
-    (tokenizer, vectorizer)
+        .or_exit("Cannot read word pieces", 1)
 }

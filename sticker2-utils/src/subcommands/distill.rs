@@ -12,7 +12,6 @@ use stdinout::OrExit;
 use sticker2::config::Config;
 use sticker2::dataset::{ConllxDataSet, DataSet};
 use sticker2::encoders::Encoders;
-use sticker2::input::vectorizer::WordPieceVectorizer;
 use sticker2::input::WordPieceTokenizer;
 use sticker2::lr::{ExponentialDecay, LearningRateSchedule};
 use sticker2::model::BertModel;
@@ -100,7 +99,6 @@ impl DistillApp {
             let train_batches = train_dataset.batches(
                 &teacher.encoders,
                 &teacher.tokenizer,
-                &teacher.vectorizer,
                 self.batch_size,
                 self.max_len,
                 None,
@@ -121,7 +119,6 @@ impl DistillApp {
                     self.validation_epoch(
                         &teacher.encoders,
                         &teacher.tokenizer,
-                        &teacher.vectorizer,
                         &student.inner,
                         validation_file,
                         global_step,
@@ -336,7 +333,6 @@ impl DistillApp {
         &self,
         encoders: &Encoders,
         tokenizer: &WordPieceTokenizer,
-        vectorizer: &WordPieceVectorizer,
         model: &BertModel,
         file: &mut File,
         global_step: usize,
@@ -357,7 +353,6 @@ impl DistillApp {
         for batch in dataset.batches(
             encoders,
             tokenizer,
-            vectorizer,
             self.batch_size,
             self.max_len,
             None,
