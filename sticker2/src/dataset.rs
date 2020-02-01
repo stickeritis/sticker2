@@ -9,7 +9,7 @@ use rand_xorshift::XorShiftRng;
 use sticker_encoders::SentenceEncoder;
 
 use crate::encoders::NamedEncoder;
-use crate::input::{SentenceWithPieces, Tokenize, WordPieceTokenizer};
+use crate::input::{SentenceWithPieces, Tokenize};
 use crate::tensor::{NoLabels, TensorBuilder, Tensors};
 use crate::util::RandomRemoveVec;
 
@@ -32,7 +32,7 @@ pub trait DataSet<'a> {
     fn batches(
         self,
         encoders: &'a [NamedEncoder],
-        tokenizer: &'a WordPieceTokenizer,
+        tokenizer: &'a dyn Tokenize,
         batch_size: usize,
         max_len: Option<usize>,
         shuffle_buffer_size: Option<usize>,
@@ -58,7 +58,7 @@ impl<R> ConllxDataSet<R> {
     /// If `max_len` == `None`, no filtering is performed.
     fn get_sentence_iter<'ds, 'a: 'ds>(
         reader: R,
-        tokenizer: &'a WordPieceTokenizer,
+        tokenizer: &'a dyn Tokenize,
         max_len: Option<usize>,
         shuffle_buffer_size: Option<usize>,
     ) -> Box<dyn Iterator<Item = Fallible<SentenceWithPieces>> + 'ds>
@@ -67,7 +67,7 @@ impl<R> ConllxDataSet<R> {
     {
         let tokenized_sentences = reader
             .sentences()
-            .map(move |s| s.map(|s| s.tokenize(tokenizer)));
+            .map(move |s| s.map(|s| tokenizer.tokenize(s)));
 
         match (max_len, shuffle_buffer_size) {
             (Some(max_len), Some(buffer_size)) => Box::new(
@@ -91,7 +91,7 @@ where
     fn batches(
         self,
         encoders: &'a [NamedEncoder],
-        tokenizer: &'a WordPieceTokenizer,
+        tokenizer: &'a dyn Tokenize,
         batch_size: usize,
         max_len: Option<usize>,
         shuffle_buffer_size: Option<usize>,

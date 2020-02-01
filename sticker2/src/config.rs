@@ -11,7 +11,7 @@ use toml;
 use wordpieces::WordPieces;
 
 use crate::encoders::EncodersConfig;
-use crate::input::WordPieceTokenizer;
+use crate::input::BertTokenizer;
 
 /// Input configuration.
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
@@ -23,10 +23,10 @@ pub struct Input {
 
 impl Input {
     /// Construct a word piece tokenizer.
-    pub fn word_piece_tokenizer(&self) -> Fallible<WordPieceTokenizer> {
+    pub fn word_piece_tokenizer(&self) -> Fallible<BertTokenizer> {
         let f = File::open(&self.word_pieces)?;
         let pieces = WordPieces::try_from(BufReader::new(f).lines())?;
-        Ok(WordPieceTokenizer::new(pieces, "[UNK]"))
+        Ok(BertTokenizer::new(pieces, "[UNK]"))
     }
 }
 

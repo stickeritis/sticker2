@@ -6,7 +6,7 @@ use std::sync::Arc;
 use clap::{App, Arg, ArgMatches};
 use conllx::io::{ReadSentence, Reader, Writer};
 use stdinout::OrExit;
-use sticker2::input::WordPieceTokenizer;
+use sticker2::input::Tokenize;
 use sticker2::tagger::Tagger;
 use tch::Device;
 use threadpool::ThreadPool;
@@ -59,7 +59,7 @@ pub struct ServerApp {
 impl ServerApp {
     fn serve(
         &self,
-        tokenizer: Arc<WordPieceTokenizer>,
+        tokenizer: Arc<dyn Tokenize>,
         tagger: Arc<TaggerWrap>,
         pool: ThreadPool,
         listener: TcpListener,
@@ -180,7 +180,7 @@ impl StickerApp for ServerApp {
             TcpListener::bind(&self.addr).or_exit(format!("Cannot listen on '{}'", self.addr), 1);
 
         self.serve(
-            Arc::new(model.tokenizer),
+            Arc::from(model.tokenizer),
             Arc::new(TaggerWrap(tagger)),
             pool,
             listener,
@@ -190,7 +190,7 @@ impl StickerApp for ServerApp {
 
 fn handle_client(
     app: ServerApp,
-    tokenizer: Arc<WordPieceTokenizer>,
+    tokenizer: Arc<dyn Tokenize>,
     tagger: Arc<TaggerWrap>,
     mut stream: TcpStream,
 ) {
@@ -214,7 +214,7 @@ fn handle_client(
     let mut speed = TaggerSpeed::new();
 
     let mut sent_proc = SentProcessor::new(
-        &tokenizer,
+        &*tokenizer,
         &tagger,
         writer,
         app.batch_size,

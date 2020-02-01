@@ -2,14 +2,14 @@ use conllx::graph::Sentence;
 use conllx::io::WriteSentence;
 use failure::Fallible;
 
-use sticker2::input::{SentenceWithPieces, Tokenize, WordPieceTokenizer};
+use sticker2::input::{SentenceWithPieces, Tokenize};
 use sticker2::tagger::Tagger;
 
 pub struct SentProcessor<'a, W>
 where
     W: WriteSentence,
 {
-    tokenizer: &'a WordPieceTokenizer,
+    tokenizer: &'a dyn Tokenize,
     tagger: &'a Tagger,
     writer: W,
     batch_size: usize,
@@ -32,7 +32,7 @@ where
     /// process sentences. This read-ahead is used to sort sentences
     /// by length to speed up processing.
     pub fn new(
-        tokenizer: &'a WordPieceTokenizer,
+        tokenizer: &'a dyn Tokenize,
         tagger: &'a Tagger,
         writer: W,
         batch_size: usize,
@@ -55,7 +55,7 @@ where
 
     /// Process a sentence.
     pub fn process(&mut self, sent: Sentence) -> Fallible<()> {
-        let tokenized_sentence = sent.tokenize(&self.tokenizer);
+        let tokenized_sentence = self.tokenizer.tokenize(sent);
 
         if let Some(max_len) = self.max_len {
             // sent.len() includes the root node, whereas max_len is
