@@ -12,7 +12,7 @@ use stdinout::OrExit;
 use sticker2::config::Config;
 use sticker2::dataset::{ConllxDataSet, DataSet};
 use sticker2::encoders::Encoders;
-use sticker2::input::WordPieceTokenizer;
+use sticker2::input::Tokenize;
 use sticker2::lr::{ExponentialDecay, LearningRateSchedule};
 use sticker2::model::BertModel;
 use sticker2::optimizers::{AdamW, AdamWConfig};
@@ -98,7 +98,7 @@ impl DistillApp {
 
             let train_batches = train_dataset.batches(
                 &teacher.encoders,
-                &teacher.tokenizer,
+                &*teacher.tokenizer,
                 self.batch_size,
                 self.max_len,
                 None,
@@ -118,7 +118,7 @@ impl DistillApp {
                 let acc = tch::no_grad(|| {
                     self.validation_epoch(
                         &teacher.encoders,
-                        &teacher.tokenizer,
+                        &*teacher.tokenizer,
                         &student.inner,
                         validation_file,
                         global_step,
@@ -332,7 +332,7 @@ impl DistillApp {
     fn validation_epoch(
         &self,
         encoders: &Encoders,
-        tokenizer: &WordPieceTokenizer,
+        tokenizer: &dyn Tokenize,
         model: &BertModel,
         file: &mut File,
         global_step: usize,

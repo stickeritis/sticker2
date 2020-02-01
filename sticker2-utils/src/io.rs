@@ -3,7 +3,7 @@ use std::fs::File;
 use stdinout::OrExit;
 use sticker2::config::{Config, TomlRead};
 use sticker2::encoders::Encoders;
-use sticker2::input::WordPieceTokenizer;
+use sticker2::input::Tokenize;
 use sticker2::model::BertModel;
 use sticker_transformers::models::bert::BertConfig;
 use tch::nn::VarStore;
@@ -13,7 +13,7 @@ use tch::Device;
 pub struct Model {
     pub encoders: Encoders,
     pub model: BertModel,
-    pub tokenizer: WordPieceTokenizer,
+    pub tokenizer: Box<dyn Tokenize>,
     pub vs: VarStore,
 }
 
@@ -139,9 +139,11 @@ fn load_encoders(config: &Config) -> Encoders {
     encoders
 }
 
-fn load_tokenizer(config: &Config) -> WordPieceTokenizer {
-    config
-        .input
-        .word_piece_tokenizer()
-        .or_exit("Cannot read word pieces", 1)
+fn load_tokenizer(config: &Config) -> Box<dyn Tokenize> {
+    Box::new(
+        config
+            .input
+            .word_piece_tokenizer()
+            .or_exit("Cannot read word pieces", 1),
+    )
 }

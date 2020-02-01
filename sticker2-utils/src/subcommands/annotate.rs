@@ -3,7 +3,7 @@ use std::io::BufWriter;
 use clap::{App, Arg, ArgMatches};
 use conllx::io::{ReadSentence, Reader, WriteSentence, Writer};
 use stdinout::{Input, OrExit, Output};
-use sticker2::input::WordPieceTokenizer;
+use sticker2::input::Tokenize;
 use sticker2::tagger::Tagger;
 use tch::{self, Device};
 
@@ -31,7 +31,7 @@ pub struct AnnotateApp {
 }
 
 impl AnnotateApp {
-    fn process<R, W>(&self, tokenizer: &WordPieceTokenizer, tagger: Tagger, read: R, write: W)
+    fn process<R, W>(&self, tokenizer: &dyn Tokenize, tagger: Tagger, read: R, write: W)
     where
         R: ReadSentence,
         W: WriteSentence,
@@ -39,7 +39,7 @@ impl AnnotateApp {
         let mut speed = TaggerSpeed::new();
 
         let mut sent_proc = SentProcessor::new(
-            &tokenizer,
+            tokenizer,
             &tagger,
             write,
             self.batch_size,
@@ -152,6 +152,6 @@ impl StickerApp for AnnotateApp {
             output.write().or_exit("Cannot open output for writing", 1),
         ));
 
-        self.process(&model.tokenizer, tagger, reader, writer)
+        self.process(&*model.tokenizer, tagger, reader, writer)
     }
 }
