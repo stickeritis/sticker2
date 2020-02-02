@@ -31,3 +31,6 @@ wordpieces = "0.2"
 [dev-dependencies]
 approx = "0.3"
 maplit = "1"
+
+[features]
+model-tests = []
