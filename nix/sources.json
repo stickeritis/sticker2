@@ -1,4 +1,11 @@
 {
+    "bert-base-german-cased-vocab": {
+        "sha256": "0g91w3nlq9li113lvw73j4b5v00kpml6wlhk71qlzih6wzw2gqbj",
+        "type": "file",
+        "url": "https://int-deepset-models-bert.s3.eu-central-1.amazonaws.com/pytorch/bert-base-german-cased-vocab.txt",
+        "url_template": "https://int-deepset-models-bert.s3.eu-central-1.amazonaws.com/pytorch/bert-base-german-cased-vocab.txt",
+        "version": "1"
+    },
     "danieldk": {
         "branch": "master",
         "description": "My Nix package set",
@@ -36,15 +43,15 @@
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "nixpkgs": {
-        "branch": "nixos-19.09",
-        "description": "A read-only mirror of NixOS/nixpkgs tracking the released channels. Send issues and PRs to",
-        "homepage": "https://github.com/NixOS/nixpkgs",
+        "branch": "master",
+        "description": "Nix Packages collection",
+        "homepage": null,
         "owner": "NixOS",
-        "repo": "nixpkgs-channels",
-        "rev": "a7aa5dbb194edff49f045882225b7568737611dd",
-        "sha256": "0mg9pshg91k9hy2903y1y7s4bfpvsla9l0hlimpkbk2mxmp76ffd",
+        "repo": "nixpkgs",
+        "rev": "73c51e064a9a730ebba9518d960755d287a86035",
+        "sha256": "0a0jdh5j54ji4m09ppzl2vrqp1ccw2zndsq7ick6jbckc18lf094",
         "type": "tarball",
-        "url": "https://github.com/NixOS/nixpkgs-channels/archive/a7aa5dbb194edff49f045882225b7568737611dd.tar.gz",
+        "url": "https://github.com/NixOS/nixpkgs/archive/73c51e064a9a730ebba9518d960755d287a86035.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     }
 }

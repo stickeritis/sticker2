@@ -154,8 +154,6 @@ fn relativize_path(config_path: &Path, filename: &str) -> Fallible<String> {
 
 #[cfg(test)]
 mod tests {
-    use std::fs::File;
-
     use sticker_encoders::layer::Layer;
     use sticker_encoders::lemma::BackoffStrategy;
 
@@ -164,8 +162,8 @@ mod tests {
 
     #[test]
     fn config() {
-        let config_file = File::open("testdata/sticker.conf").unwrap();
-        let config = Config::from_toml_read(config_file).unwrap();
+        let config =
+            Config::from_toml_read(include_bytes!("../testdata/sticker.conf").as_ref()).unwrap();
 
         assert_eq!(
             config,
