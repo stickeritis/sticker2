@@ -4,6 +4,9 @@ use ndarray::Array1;
 mod bert;
 pub use bert::BertTokenizer;
 
+mod xlm_roberta;
+pub use xlm_roberta::XlmRobertaTokenizer;
+
 /// Trait for wordpiece tokenizers.
 pub trait Tokenize: Send + Sync {
     /// Tokenize the tokens in a sentence into word pieces.

@@ -53,5 +53,12 @@
         "type": "tarball",
         "url": "https://github.com/NixOS/nixpkgs/archive/73c51e064a9a730ebba9518d960755d287a86035.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
+    "xlm-roberta-base-sentencepiece": {
+        "sha256": "0r98vghgqykj19d19jly0nmi2z1gjpknvid0wblqh11aprm19j6g",
+        "type": "file",
+        "url": "https://s3.amazonaws.com/models.huggingface.co/bert/xlm-roberta-base-sentencepiece.bpe.model",
+        "url_template": "https://s3.amazonaws.com/models.huggingface.co/bert/xlm-roberta-base-sentencepiece.bpe.model",
+        "version": "1"
     }
 }
