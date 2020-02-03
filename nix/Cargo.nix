@@ -1662,6 +1662,35 @@ rec {
         };
         resolvedDefaultFeatures = [ "default" "std" ];
       };
+    "num-derive 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)"
+      = rec {
+        crateName = "num-derive";
+        version = "0.3.0";
+        edition = "2018";
+        sha256 = "0imprwv8cs01k46g56ajlvc97dp8kz51y2vn6cp9jkw1c6r1b2qc";
+        procMacro = true;
+        libName = "num_derive";
+        authors = [
+          "The Rust Project Developers"
+        ];
+        dependencies = [
+          {
+            name = "proc-macro2";
+            packageId = "proc-macro2 1.0.6 (registry+https://github.com/rust-lang/crates.io-index)";
+          }
+          {
+            name = "quote";
+            packageId = "quote 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)";
+          }
+          {
+            name = "syn";
+            packageId = "syn 1.0.11 (registry+https://github.com/rust-lang/crates.io-index)";
+          }
+        ];
+        features = {
+          "full-syntax" = [ "syn/full" ];
+        };
+      };
     "num-integer 0.1.41 (registry+https://github.com/rust-lang/crates.io-index)"
       = rec {
         crateName = "num-integer";
@@ -2058,6 +2087,20 @@ rec {
           "default" = [ "proc-macro" ];
         };
         resolvedDefaultFeatures = [ "default" "proc-macro" ];
+      };
+    "protobuf 2.10.1 (registry+https://github.com/rust-lang/crates.io-index)"
+      = rec {
+        crateName = "protobuf";
+        version = "2.10.1";
+        edition = "2015";
+        sha256 = "1ifkffc7qbn3fhnhyj7c2108a85mryr8g9pjnn3jdglddbcxv1k6";
+        authors = [
+          "Stepan Koltsov <stepan.koltsov@gmail.com>"
+        ];
+        features = {
+          "with-bytes" = [ "bytes" ];
+          "with-serde" = [ "serde" "serde_derive" ];
+        };
       };
     "quote 0.6.13 (registry+https://github.com/rust-lang/crates.io-index)"
       = rec {
@@ -2789,6 +2832,67 @@ rec {
         features = {
         };
       };
+    "sentencepiece 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)"
+      = rec {
+        crateName = "sentencepiece";
+        version = "0.1.2";
+        edition = "2018";
+        sha256 = "1p8pshwq1p48w9dsad7nxr3lgxd0gn2jf2gqc8hglp9dlbn2f69b";
+        authors = [
+          "Daniël de Kok <me@danieldk.eu>"
+        ];
+        dependencies = [
+          {
+            name = "failure";
+            packageId = "failure 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)";
+          }
+          {
+            name = "libc";
+            packageId = "libc 0.2.66 (registry+https://github.com/rust-lang/crates.io-index)";
+          }
+          {
+            name = "num-derive";
+            packageId = "num-derive 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)";
+          }
+          {
+            name = "num-traits";
+            packageId = "num-traits 0.2.10 (registry+https://github.com/rust-lang/crates.io-index)";
+          }
+          {
+            name = "protobuf";
+            packageId = "protobuf 2.10.1 (registry+https://github.com/rust-lang/crates.io-index)";
+          }
+          {
+            name = "sentencepiece-sys";
+            packageId = "sentencepiece-sys 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)";
+          }
+        ];
+        features = {
+          "proto-compile" = [ "protoc-rust" ];
+        };
+      };
+    "sentencepiece-sys 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)"
+      = rec {
+        crateName = "sentencepiece-sys";
+        version = "0.1.2";
+        edition = "2018";
+        sha256 = "07jyifjgshhzvckni0pmppacvhiw3ph9a1hg3lb9g6mdak7n69x2";
+        authors = [
+          "Daniël de Kok <me@danieldk.eu>"
+        ];
+        buildDependencies = [
+          {
+            name = "cc";
+            packageId = "cc 1.0.48 (registry+https://github.com/rust-lang/crates.io-index)";
+          }
+          {
+            name = "pkg-config";
+            packageId = "pkg-config 0.3.17 (registry+https://github.com/rust-lang/crates.io-index)";
+          }
+        ];
+        features = {
+        };
+      };
     "seqalign 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)"
       = rec {
         crateName = "seqalign";
@@ -3105,6 +3209,10 @@ rec {
           {
             name = "rand_xorshift";
             packageId = "rand_xorshift 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)";
+          }
+          {
+            name = "sentencepiece";
+            packageId = "sentencepiece 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)";
           }
           {
             name = "serde";

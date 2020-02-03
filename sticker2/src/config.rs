@@ -4,6 +4,7 @@ use std::io::{BufRead, BufReader, Read};
 use std::path::Path;
 
 use failure::{format_err, Fallible};
+use sentencepiece::SentencePieceProcessor;
 use serde::{Deserialize, Serialize};
 use serde_json;
 use sticker_transformers::models::bert::BertConfig;
@@ -11,23 +12,14 @@ use toml;
 use wordpieces::WordPieces;
 
 use crate::encoders::EncodersConfig;
-use crate::input::BertTokenizer;
+use crate::input::{BertTokenizer, Tokenize, XlmRobertaTokenizer};
 
 /// Input configuration.
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct Input {
-    /// Word pieces file.
-    pub word_pieces: String,
-}
-
-impl Input {
-    /// Construct a word piece tokenizer.
-    pub fn word_piece_tokenizer(&self) -> Fallible<BertTokenizer> {
-        let f = File::open(&self.word_pieces)?;
-        let pieces = WordPieces::try_from(BufReader::new(f).lines())?;
-        Ok(BertTokenizer::new(pieces, "[UNK]"))
-    }
+    /// Vocabulary file.
+    pub vocab: String,
 }
 
 /// Labeler configuration.
@@ -53,13 +45,22 @@ pub struct Model {
 
     /// Configuration of the pretrained model.
     pub pretrain_config: String,
+
+    /// Type of pretraining model.
+    pub pretrain_type: PretrainModelType,
 }
 
 impl Model {
     /// Read the pretraining model configuration.
-    pub fn pretrain_config(&self) -> Fallible<BertConfig> {
-        let f = File::open(&self.pretrain_config)?;
-        Ok(serde_json::from_reader(BufReader::new(f))?)
+    pub fn pretrain_config(&self) -> Fallible<PretrainConfig> {
+        let reader = BufReader::new(File::open(&self.pretrain_config)?);
+
+        Ok(match self.pretrain_type {
+            PretrainModelType::Bert => PretrainConfig::Bert(serde_json::from_reader(reader)?),
+            PretrainModelType::XlmRoberta => {
+                PretrainConfig::XlmRoberta(serde_json::from_reader(reader)?)
+            }
+        })
     }
 }
 
@@ -71,6 +72,19 @@ pub enum PositionEmbeddings {
 
     /// Use generated sinusoidal embeddings.
     Sinusoidal,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub enum PretrainConfig {
+    Bert(BertConfig),
+    XlmRoberta(BertConfig),
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum PretrainModelType {
+    Bert,
+    XlmRoberta,
 }
 
 /// Sequence labeler configuration.
@@ -95,12 +109,27 @@ impl Config {
     {
         let config_path = config_path.as_ref();
 
-        self.input.word_pieces = relativize_path(config_path, &self.input.word_pieces)?;
+        self.input.vocab = relativize_path(config_path, &self.input.vocab)?;
         self.labeler.labels = relativize_path(config_path, &self.labeler.labels)?;
         self.model.parameters = relativize_path(config_path, &self.model.parameters)?;
         self.model.pretrain_config = relativize_path(config_path, &self.model.pretrain_config)?;
 
         Ok(())
+    }
+
+    /// Construct a word piece tokenizer.
+    pub fn tokenizer(&self) -> Fallible<Box<dyn Tokenize>> {
+        match self.model.pretrain_type {
+            PretrainModelType::Bert => {
+                let f = File::open(&self.input.vocab)?;
+                let pieces = WordPieces::try_from(BufReader::new(f).lines())?;
+                Ok(Box::new(BertTokenizer::new(pieces, "[UNK]")))
+            }
+            PretrainModelType::XlmRoberta => {
+                let spp = SentencePieceProcessor::load(&self.input.vocab)?;
+                Ok(Box::new(XlmRobertaTokenizer::from(spp)))
+            }
+        }
     }
 }
 
@@ -157,7 +186,9 @@ mod tests {
     use sticker_encoders::layer::Layer;
     use sticker_encoders::lemma::BackoffStrategy;
 
-    use crate::config::{Config, Input, Labeler, Model, PositionEmbeddings, TomlRead};
+    use crate::config::{
+        Config, Input, Labeler, Model, PositionEmbeddings, PretrainModelType, TomlRead,
+    };
     use crate::encoders::{DependencyEncoder, EncoderType, EncodersConfig, NamedEncoderConfig};
 
     #[test]
@@ -169,7 +200,7 @@ mod tests {
             config,
             Config {
                 input: Input {
-                    word_pieces: "bert-base-german-cased-vocab.txt".to_string()
+                    vocab: "bert-base-german-cased-vocab.txt".to_string()
                 },
                 labeler: Labeler {
                     labels: "sticker.labels".to_string(),
@@ -192,6 +223,7 @@ mod tests {
                     parameters: "epoch-99".to_string(),
                     position_embeddings: PositionEmbeddings::Model,
                     pretrain_config: "bert_config.json".to_string(),
+                    pretrain_type: PretrainModelType::Bert,
                 }
             }
         );

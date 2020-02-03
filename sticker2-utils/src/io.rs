@@ -1,7 +1,7 @@
 use std::fs::File;
 
 use stdinout::OrExit;
-use sticker2::config::{Config, TomlRead};
+use sticker2::config::{Config, PretrainConfig, TomlRead};
 use sticker2::encoders::Encoders;
 use sticker2::input::Tokenize;
 use sticker2::model::BertModel;
@@ -97,11 +97,15 @@ impl Model {
     }
 }
 
-fn load_bert_config(config: &Config) -> BertConfig {
-    config
+pub fn load_bert_config(config: &Config) -> BertConfig {
+    match config
         .model
         .pretrain_config()
         .or_exit("Cannot load pretraining model configuration", 1)
+    {
+        PretrainConfig::Bert(config) => config,
+        PretrainConfig::XlmRoberta(config) => config,
+    }
 }
 
 pub fn load_config(config_path: &str) -> Config {
@@ -140,10 +144,7 @@ fn load_encoders(config: &Config) -> Encoders {
 }
 
 fn load_tokenizer(config: &Config) -> Box<dyn Tokenize> {
-    Box::new(
-        config
-            .input
-            .word_piece_tokenizer()
-            .or_exit("Cannot read word pieces", 1),
-    )
+    config
+        .tokenizer()
+        .or_exit("Cannot read tokenizer vocabulary", 1)
 }
