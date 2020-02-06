@@ -3137,12 +3137,12 @@ rec {
         features = {
         };
       };
-    "sticker-transformers 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)"
+    "sticker-transformers 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)"
       = rec {
         crateName = "sticker-transformers";
-        version = "0.3.0";
+        version = "0.4.0";
         edition = "2018";
-        sha256 = "09n7ja906hmldz7cxndcdb4k9rsb9xc48f58204w7ng0xiaf6f2c";
+        sha256 = "0jb7bf2ha1598xh8v05p5hribx9gw3n86hivnvqx1kndcsn20bq6";
         authors = [
           "Daniël de Kok <me@danieldk.eu>"
         ];
@@ -3229,7 +3229,7 @@ rec {
           }
           {
             name = "sticker-transformers";
-            packageId = "sticker-transformers 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)";
+            packageId = "sticker-transformers 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)";
           }
           {
             name = "tch";
@@ -3309,7 +3309,7 @@ rec {
           }
           {
             name = "sticker-transformers";
-            packageId = "sticker-transformers 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)";
+            packageId = "sticker-transformers 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)";
           }
           {
             name = "sticker2";

@@ -21,7 +21,7 @@ use sticker2::util::seq_len_to_mask;
 use tch::nn::VarStore;
 use tch::{self, Device, Kind, Reduction, Tensor};
 
-use crate::io::{load_bert_config, load_config, Model};
+use crate::io::{load_config, load_pretrain_config, Model};
 use crate::progress::ReadProgress;
 use crate::traits::{StickerApp, DEFAULT_CLAP_SETTINGS};
 use crate::util::count_conllx_sentences;
@@ -286,13 +286,13 @@ impl DistillApp {
     }
 
     fn fresh_student(&self, student_config: &Config, teacher: &Model) -> StudentModel {
-        let bert_config = load_bert_config(student_config);
+        let pretrain_config = load_pretrain_config(student_config);
 
         let vs = VarStore::new(self.device);
 
         let inner = BertModel::new(
             vs.root(),
-            &bert_config,
+            &pretrain_config,
             &teacher.encoders,
             0.1,
             student_config.model.position_embeddings.clone(),
