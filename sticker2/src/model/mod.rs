@@ -9,6 +9,7 @@ use sticker_transformers::layers::Dropout;
 use sticker_transformers::models::bert::{
     BertConfig, BertEmbeddings, BertEncoder, BertError, BertLayerOutput,
 };
+use sticker_transformers::models::roberta::RobertaEmbeddings;
 use sticker_transformers::models::sinusoidal::SinusoidalEmbeddings;
 use sticker_transformers::scalar_weighting::{
     ScalarWeightClassifier, ScalarWeightClassifierConfig,
@@ -16,29 +17,74 @@ use sticker_transformers::scalar_weighting::{
 use tch::nn::{ModuleT, Path};
 use tch::{self, Kind, Tensor};
 
-use crate::config::PositionEmbeddings;
+use crate::config::{PositionEmbeddings, PretrainConfig};
 use crate::encoders::Encoders;
+
+trait PretrainBertConfig {
+    fn bert_config(&self) -> &BertConfig;
+}
+
+impl PretrainBertConfig for PretrainConfig {
+    fn bert_config(&self) -> &BertConfig {
+        match self {
+            PretrainConfig::Bert(config) => config,
+            PretrainConfig::XlmRoberta(config) => config,
+        }
+    }
+}
 
 #[derive(Debug)]
 enum BertEmbeddingLayer {
     Bert(BertEmbeddings),
+    Roberta(RobertaEmbeddings),
     Sinusoidal(SinusoidalEmbeddings),
 }
 
 impl BertEmbeddingLayer {
     fn new<'a>(
         vs: impl Borrow<Path<'a>>,
-        config: &BertConfig,
+        pretrain_config: &PretrainConfig,
         position_embeddings: PositionEmbeddings,
     ) -> Self {
-        match position_embeddings {
-            PositionEmbeddings::Model => {
+        match (pretrain_config, position_embeddings) {
+            (PretrainConfig::Bert(config), PositionEmbeddings::Model) => {
                 BertEmbeddingLayer::Bert(BertEmbeddings::new(vs, config, true))
             }
-            PositionEmbeddings::Sinusoidal => {
+            (PretrainConfig::Bert(config), PositionEmbeddings::Sinusoidal) => {
                 BertEmbeddingLayer::Sinusoidal(SinusoidalEmbeddings::new(vs, config))
             }
+            (PretrainConfig::XlmRoberta(config), PositionEmbeddings::Model) => {
+                BertEmbeddingLayer::Roberta(RobertaEmbeddings::new(vs, config))
+            }
+            (PretrainConfig::XlmRoberta(_), PositionEmbeddings::Sinusoidal) => unreachable!(),
         }
+    }
+
+    fn load_from_hdf5<'a>(
+        vs: impl Borrow<Path<'a>>,
+        pretrain_config: &PretrainConfig,
+        pretrained_file: &File,
+    ) -> Fallible<BertEmbeddingLayer> {
+        let vs = vs.borrow();
+
+        let embeddings = match pretrain_config {
+            PretrainConfig::Bert(config) => {
+                BertEmbeddingLayer::Bert(BertEmbeddings::load_from_hdf5(
+                    vs.sub("encoder"),
+                    config,
+                    pretrained_file.group("bert/embeddings")?,
+                )?)
+            }
+            PretrainConfig::XlmRoberta(config) => {
+                BertEmbeddingLayer::Roberta(RobertaEmbeddings::load_from_hdf5(
+                    vs.sub("encoder"),
+                    config,
+                    pretrained_file.group("bert/embeddings")?,
+                )?)
+            }
+        };
+
+        Ok(embeddings)
     }
 }
 
@@ -48,6 +94,7 @@ impl ModuleT for BertEmbeddingLayer {
 
         match self {
             Bert(ref embeddings) => embeddings.forward_t(input, train),
+            Roberta(ref embeddings) => embeddings.forward_t(input, train),
             Sinusoidal(ref embeddings) => embeddings.forward_t(input, train),
         }
     }
@@ -69,15 +116,18 @@ impl BertModel {
     /// be dropped out in scalar weighting during training.
     pub fn new<'a>(
         vs: impl Borrow<Path<'a>>,
-        config: &BertConfig,
+        pretrain_config: &PretrainConfig,
         encoders: &Encoders,
         layers_dropout: f64,
         position_embeddings: PositionEmbeddings,
     ) -> Result<Self, BertError> {
         let vs = vs.borrow();
 
-        let embeddings = BertEmbeddingLayer::new(vs.sub("encoder"), config, position_embeddings);
-        let encoder = BertEncoder::new(vs.sub("encoder"), config)?;
+        let bert_config = pretrain_config.bert_config();
+
+        let embeddings =
+            BertEmbeddingLayer::new(vs.sub("encoder"), pretrain_config, position_embeddings);
+        let encoder = BertEncoder::new(vs.sub("encoder"), bert_config)?;
 
         let classifiers = encoders
             .iter()
@@ -88,12 +138,12 @@ impl BertModel {
                         vs.sub("classifiers")
                             .sub(format!("{}_classifier", encoder.name())),
                         &ScalarWeightClassifierConfig {
-                            dropout_prob: config.hidden_dropout_prob,
-                            hidden_size: config.hidden_size,
-                            input_size: config.hidden_size,
+                            dropout_prob: bert_config.hidden_dropout_prob,
+                            hidden_size: bert_config.hidden_size,
+                            input_size: bert_config.hidden_size,
                             layer_dropout_prob: 0.1,
-                            layer_norm_eps: config.layer_norm_eps,
-                            n_layers: config.num_hidden_layers,
+                            layer_norm_eps: bert_config.layer_norm_eps,
+                            n_layers: bert_config.num_hidden_layers,
                             n_labels: encoder.encoder().len() as i64,
                         },
                     ),
@@ -115,7 +165,7 @@ impl BertModel {
     /// be dropped out in scalar weighting during training.
     pub fn from_pretrained<'a>(
         vs: impl Borrow<Path<'a>>,
-        config: &BertConfig,
+        pretrain_config: &PretrainConfig,
         hdf_path: impl AsRef<path::Path>,
         encoders: &Encoders,
         layers_dropout: f64,
@@ -124,15 +174,13 @@ impl BertModel {
 
         let pretrained_file = File::open(hdf_path, "r")?;
 
-        let embeddings = BertEmbeddingLayer::Bert(BertEmbeddings::load_from_hdf5(
-            vs.sub("encoder"),
-            config,
-            pretrained_file.group("bert/embeddings")?,
-        )?);
+        let bert_config = pretrain_config.bert_config();
+
+        let embeddings = BertEmbeddingLayer::load_from_hdf5(vs, pretrain_config, &pretrained_file)?;
 
         let encoder = BertEncoder::load_from_hdf5(
             vs.sub("encoder"),
-            config,
+            bert_config,
             pretrained_file.group("bert/encoder")?,
         )?;
 
@@ -145,12 +193,12 @@ impl BertModel {
                         vs.sub("classifiers")
                             .sub(format!("{}_classifier", encoder.name())),
                         &ScalarWeightClassifierConfig {
-                            dropout_prob: config.hidden_dropout_prob,
-                            hidden_size: config.hidden_size,
-                            input_size: config.hidden_size,
+                            dropout_prob: bert_config.hidden_dropout_prob,
+                            hidden_size: bert_config.hidden_size,
+                            input_size: bert_config.hidden_size,
                             layer_dropout_prob: 0.1,
-                            layer_norm_eps: config.layer_norm_eps,
-                            n_layers: config.num_hidden_layers,
+                            layer_norm_eps: bert_config.layer_norm_eps,
+                            n_layers: bert_config.num_hidden_layers,
                             n_labels: encoder.encoder().len() as i64,
                         },
                     ),

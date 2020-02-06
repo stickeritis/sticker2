@@ -5,7 +5,6 @@ use sticker2::config::{Config, PretrainConfig, TomlRead};
 use sticker2::encoders::Encoders;
 use sticker2::input::Tokenize;
 use sticker2::model::BertModel;
-use sticker_transformers::models::bert::BertConfig;
 use tch::nn::VarStore;
 use tch::Device;
 
@@ -44,13 +43,13 @@ impl Model {
         let config = load_config(config_path);
         let encoders = load_encoders(&config);
         let tokenizer = load_tokenizer(&config);
-        let bert_config = load_bert_config(&config);
+        let pretrain_config = load_pretrain_config(&config);
 
         let mut vs = VarStore::new(device);
 
         let model = BertModel::new(
             vs.root(),
-            &bert_config,
+            &pretrain_config,
             &encoders,
             0.0,
             config.model.position_embeddings,
@@ -81,12 +80,13 @@ impl Model {
         let config = load_config(config_path);
         let encoders = load_encoders(&config);
         let tokenizer = load_tokenizer(&config);
-        let bert_config = load_bert_config(&config);
+        let pretrain_config = load_pretrain_config(&config);
 
         let vs = VarStore::new(device);
 
-        let model = BertModel::from_pretrained(vs.root(), &bert_config, hdf5_path, &encoders, 0.5)
-            .or_exit("Cannot load pretrained model parameters", 1);
+        let model =
+            BertModel::from_pretrained(vs.root(), &pretrain_config, hdf5_path, &encoders, 0.5)
+                .or_exit("Cannot load pretrained model parameters", 1);
 
         Model {
             encoders,
@@ -97,15 +97,11 @@ impl Model {
     }
 }
 
-pub fn load_bert_config(config: &Config) -> BertConfig {
-    match config
+pub fn load_pretrain_config(config: &Config) -> PretrainConfig {
+    config
         .model
         .pretrain_config()
         .or_exit("Cannot load pretraining model configuration", 1)
-    {
-        PretrainConfig::Bert(config) => config,
-        PretrainConfig::XlmRoberta(config) => config,
-    }
 }
 
 pub fn load_config(config_path: &str) -> Config {
