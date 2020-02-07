@@ -42,13 +42,27 @@ impl Tokenize for XlmRobertaTokenizer {
         for token in sentence.iter().filter_map(Node::token) {
             token_offsets.push(pieces.len());
 
-            pieces.extend(
-                self.spp
-                    .encode(token.form())
-                    .expect("The sentencepiece tokenizer failed")
-                    .iter()
-                    .map(|piece| piece.id as i64 + FAIRSEQ_OFFSET),
-            );
+            let token_pieces = self
+                .spp
+                .encode(token.form())
+                .expect("The sentencepiece tokenizer failed");
+
+            if !token_pieces.is_empty() {
+                pieces.extend(
+                    token_pieces
+                        .into_iter()
+                        .map(|piece| piece.id as i64 + FAIRSEQ_OFFSET),
+                );
+            } else {
+                // Use the unknown token id if sentencepiece does not
+                // give an output for the token. This should not
+                // happen under normal circumstances, since
+                // sentencepiece does return this id for unknown
+                // tokens. However, the input may be corrupt and use
+                // some form of non-tab whitespace as a form, for which
+                // sentencepiece does not return any identifier.
+                pieces.push(self.spp.unknown_id() as i64 + FAIRSEQ_OFFSET);
+            }
         }
 
         pieces.push(FAIRSEQ_EOS_ID);
@@ -91,5 +105,13 @@ mod tests {
             pieces.pieces,
             array![0, 310, 23451, 107, 6743, 68, 62, 43789, 207126, 49004, 705, 2]
         );
+    }
+
+    #[test]
+    fn handles_missing_sentence_pieces() {
+        let tokenizer = xlm_roberta_tokenizer();
+        let sent = sentence_from_forms(&["die", " ", "AWO"]);
+        let pieces = tokenizer.tokenize(sent);
+        assert_eq!(pieces.pieces, array![0, 68, 1, 62, 43789, 2]);
     }
 }
