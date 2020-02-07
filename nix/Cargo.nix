@@ -2832,12 +2832,12 @@ rec {
         features = {
         };
       };
-    "sentencepiece 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)"
+    "sentencepiece 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)"
       = rec {
         crateName = "sentencepiece";
-        version = "0.1.2";
+        version = "0.1.3";
         edition = "2018";
-        sha256 = "1p8pshwq1p48w9dsad7nxr3lgxd0gn2jf2gqc8hglp9dlbn2f69b";
+        sha256 = "0f0d3wlq2pjp1mpj20w47fngzwq5p4v6lmlf9hprla1qc02c1vji";
         authors = [
           "Daniël de Kok <me@danieldk.eu>"
         ];
@@ -2864,19 +2864,19 @@ rec {
           }
           {
             name = "sentencepiece-sys";
-            packageId = "sentencepiece-sys 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)";
+            packageId = "sentencepiece-sys 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)";
           }
         ];
         features = {
           "proto-compile" = [ "protoc-rust" ];
         };
       };
-    "sentencepiece-sys 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)"
+    "sentencepiece-sys 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)"
       = rec {
         crateName = "sentencepiece-sys";
-        version = "0.1.2";
+        version = "0.1.3";
         edition = "2018";
-        sha256 = "07jyifjgshhzvckni0pmppacvhiw3ph9a1hg3lb9g6mdak7n69x2";
+        sha256 = "190hbwcypa8ji09jkm1wigwwm1z7nsjbqnmyiqm0kcy6zbvzzmmy";
         authors = [
           "Daniël de Kok <me@danieldk.eu>"
         ];
@@ -3212,7 +3212,7 @@ rec {
           }
           {
             name = "sentencepiece";
-            packageId = "sentencepiece 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)";
+            packageId = "sentencepiece 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)";
           }
           {
             name = "serde";
