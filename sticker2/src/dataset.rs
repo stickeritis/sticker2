@@ -34,7 +34,7 @@ pub trait DataSet<'a> {
         encoders: &'a [NamedEncoder],
         tokenizer: &'a dyn Tokenize,
         batch_size: usize,
-        max_len: Option<usize>,
+        max_len: Option<SequenceLength>,
         shuffle_buffer_size: Option<usize>,
         labels: bool,
     ) -> Fallible<Self::Iter>;
@@ -59,7 +59,7 @@ impl<R> ConllxDataSet<R> {
     fn get_sentence_iter<'ds, 'a: 'ds>(
         reader: R,
         tokenizer: &'a dyn Tokenize,
-        max_len: Option<usize>,
+        max_len: Option<SequenceLength>,
         shuffle_buffer_size: Option<usize>,
     ) -> Box<dyn Iterator<Item = Fallible<SentenceWithPieces>> + 'ds>
     where
@@ -93,7 +93,7 @@ where
         encoders: &'a [NamedEncoder],
         tokenizer: &'a dyn Tokenize,
         batch_size: usize,
-        max_len: Option<usize>,
+        max_len: Option<SequenceLength>,
         shuffle_buffer_size: Option<usize>,
         labels: bool,
     ) -> Fallible<Self::Iter> {
@@ -234,7 +234,7 @@ where
 
 /// Trait providing adapters for `SentenceWithPieces` iterators.
 pub trait SentenceIter: Sized {
-    fn filter_by_len(self, max_len: usize) -> LengthFilter<Self>;
+    fn filter_by_len(self, max_len: SequenceLength) -> LengthFilter<Self>;
     fn shuffle(self, buffer_size: usize) -> Shuffled<Self>;
 }
 
@@ -242,7 +242,7 @@ impl<I> SentenceIter for I
 where
     I: Iterator<Item = Fallible<SentenceWithPieces>>,
 {
-    fn filter_by_len(self, max_len: usize) -> LengthFilter<Self> {
+    fn filter_by_len(self, max_len: SequenceLength) -> LengthFilter<Self> {
         LengthFilter {
             inner: self,
             max_len,
@@ -258,10 +258,20 @@ where
     }
 }
 
+/// The length of a sequence.
+///
+/// This enum can be used to express the (maximum) length of a
+/// sentence in tokens or in pieces.
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub enum SequenceLength {
+    Tokens(usize),
+    Pieces(usize),
+}
+
 /// An Iterator adapter filtering sentences by maximum length.
 pub struct LengthFilter<I> {
     inner: I,
-    max_len: usize,
+    max_len: SequenceLength,
 }
 
 impl<I> Iterator for LengthFilter<I>
@@ -274,10 +284,19 @@ where
         while let Some(sent) = self.inner.next() {
             // Treat Err as length 0 to keep our type as Result<Sentence, Error>. The iterator
             // will properly return the Error at a later point.
-            let len = sent.as_ref().map(|s| s.pieces.len()).unwrap_or(0);
-            if len > self.max_len {
+            let too_long = match self.max_len {
+                SequenceLength::Pieces(max_len) => {
+                    sent.as_ref().map(|s| s.pieces.len()).unwrap_or(0) > max_len
+                }
+                SequenceLength::Tokens(max_len) => {
+                    sent.as_ref().map(|s| s.token_offsets.len()).unwrap_or(0) > max_len
+                }
+            };
+
+            if too_long {
                 continue;
             }
+
             return Some(sent);
         }
         None

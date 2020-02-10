@@ -6,7 +6,7 @@ use failure::Fallible;
 use indicatif::ProgressStyle;
 use ordered_float::NotNan;
 use stdinout::OrExit;
-use sticker2::dataset::{ConllxDataSet, DataSet};
+use sticker2::dataset::{ConllxDataSet, DataSet, SequenceLength};
 use sticker2::encoders::Encoders;
 use sticker2::input::Tokenize;
 use sticker2::lr::{ExponentialDecay, LearningRateSchedule, PlateauLearningRate};
@@ -55,7 +55,7 @@ pub struct FinetuneApp {
     continue_finetune: bool,
     device: Device,
     finetune_embeds: bool,
-    max_len: Option<usize>,
+    max_len: Option<SequenceLength>,
     label_smoothing: Option<f64>,
     include_continuations: bool,
     lr_schedule: LrSchedule,
@@ -413,7 +413,8 @@ impl StickerApp for FinetuneApp {
         });
         let max_len = matches
             .value_of(MAX_LEN)
-            .map(|v| v.parse().or_exit("Cannot parse maximum sentence length", 1));
+            .map(|v| v.parse().or_exit("Cannot parse maximum sentence length", 1))
+            .map(SequenceLength::Pieces);
         let include_continuations = matches.is_present(INCLUDE_CONTINUATIONS);
         let lr_decay_rate = matches
             .value_of(LR_DECAY_RATE)
