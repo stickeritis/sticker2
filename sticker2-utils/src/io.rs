@@ -139,7 +139,7 @@ fn load_encoders(config: &Config) -> Encoders {
     encoders
 }
 
-fn load_tokenizer(config: &Config) -> Box<dyn Tokenize> {
+pub fn load_tokenizer(config: &Config) -> Box<dyn Tokenize> {
     config
         .tokenizer()
         .or_exit("Cannot read tokenizer vocabulary", 1)

@@ -10,7 +10,7 @@ use itertools::Itertools;
 use ordered_float::NotNan;
 use stdinout::OrExit;
 use sticker2::config::Config;
-use sticker2::dataset::{ConllxDataSet, DataSet};
+use sticker2::dataset::{ConllxDataSet, DataSet, SequenceLength};
 use sticker2::encoders::Encoders;
 use sticker2::input::Tokenize;
 use sticker2::lr::{ExponentialDecay, LearningRateSchedule};
@@ -21,7 +21,7 @@ use sticker2::util::seq_len_to_mask;
 use tch::nn::VarStore;
 use tch::{self, Device, Kind, Reduction, Tensor};
 
-use crate::io::{load_config, load_pretrain_config, Model};
+use crate::io::{load_config, load_pretrain_config, load_tokenizer, Model};
 use crate::progress::ReadProgress;
 use crate::traits::{StickerApp, DEFAULT_CLAP_SETTINGS};
 use crate::util::count_conllx_sentences;
@@ -49,7 +49,7 @@ pub struct DistillApp {
     device: Device,
     eval_steps: usize,
     hard_loss: bool,
-    max_len: Option<usize>,
+    max_len: Option<SequenceLength>,
     lr_schedules: RefCell<LearningRateSchedules>,
     student_config: String,
     teacher_config: String,
@@ -66,6 +66,7 @@ pub struct LearningRateSchedules {
 
 struct StudentModel {
     inner: BertModel,
+    tokenizer: Box<dyn Tokenize>,
     vs: VarStore,
 }
 
@@ -75,7 +76,8 @@ impl DistillApp {
         optimizer: &mut AdamW,
         teacher: &Model,
         student: &StudentModel,
-        train_file: &File,
+        teacher_train_file: &File,
+        student_train_file: &File,
         validation_file: &mut File,
     ) -> Fallible<()> {
         let mut best_step = 0;
@@ -85,7 +87,7 @@ impl DistillApp {
 
         let n_steps = self
             .train_duration
-            .to_steps(&train_file, self.batch_size)
+            .to_steps(&teacher_train_file, self.batch_size)
             .or_exit("Cannot determine number of training steps", 1);
 
         let train_progress = ProgressBar::new(n_steps as u64);
@@ -94,9 +96,10 @@ impl DistillApp {
         ));
 
         while global_step < n_steps - 1 {
-            let mut train_dataset = Self::open_dataset(&train_file);
+            let mut teacher_train_dataset = Self::open_dataset(&teacher_train_file);
+            let mut student_train_dataset = Self::open_dataset(&student_train_file);
 
-            let train_batches = train_dataset.batches(
+            let teacher_train_batches = teacher_train_dataset.batches(
                 &teacher.encoders,
                 &*teacher.tokenizer,
                 self.batch_size,
@@ -105,10 +108,24 @@ impl DistillApp {
                 false,
             )?;
 
-            for steps in &train_batches.chunks(self.eval_steps) {
+            let student_train_batches = student_train_dataset.batches(
+                &teacher.encoders,
+                &*student.tokenizer,
+                self.batch_size,
+                self.max_len,
+                None,
+                false,
+            )?;
+
+            for (teacher_steps, student_steps) in teacher_train_batches
+                .chunks(self.eval_steps)
+                .into_iter()
+                .zip(student_train_batches.chunks(self.eval_steps).into_iter())
+            {
                 self.train_steps(
                     &train_progress,
-                    steps,
+                    teacher_steps,
+                    student_steps,
                     &mut global_step,
                     optimizer,
                     &teacher.model,
@@ -118,7 +135,7 @@ impl DistillApp {
                 let acc = tch::no_grad(|| {
                     self.validation_epoch(
                         &teacher.encoders,
-                        &*teacher.tokenizer,
+                        &*student.tokenizer,
                         &student.inner,
                         validation_file,
                         global_step,
@@ -157,36 +174,47 @@ impl DistillApp {
     fn train_steps(
         &self,
         progress: &ProgressBar,
-        batches: impl Iterator<Item = Fallible<Tensors>>,
+        teacher_batches: impl Iterator<Item = Fallible<Tensors>>,
+        student_batches: impl Iterator<Item = Fallible<Tensors>>,
         global_step: &mut usize,
         optimizer: &mut AdamW,
         teacher: &BertModel,
         student: &BertModel,
     ) -> Fallible<()> {
-        for batch in batches {
-            let batch = batch.or_exit("Cannot read batch", 1);
+        for (teacher_batch, student_batch) in teacher_batches.zip(student_batches) {
+            let teacher_batch = teacher_batch.or_exit("Cannot read teacher batch", 1);
+            let student_batch = student_batch.or_exit("Cannot read student batch", 1);
 
             // Compute masks.
-            let attention_mask =
-                seq_len_to_mask(&batch.seq_lens, batch.inputs.size()[1]).to_device(self.device);
-            let token_mask = batch.token_mask.to_kind(Kind::Float).to_device(self.device);
-
-            // Number of tokens.
-            let n_tokens = token_mask.sum(Kind::Float);
+            let teacher_attention_mask =
+                seq_len_to_mask(&teacher_batch.seq_lens, teacher_batch.inputs.size()[1])
+                    .to_device(self.device);
+            let teacher_token_mask = teacher_batch
+                .token_mask
+                .to_kind(Kind::Bool)
+                .to_device(self.device);
 
             let teacher_logits = tch::no_grad(|| {
                 teacher.logits(
-                    &batch.inputs.to_device(self.device),
-                    &attention_mask,
+                    &teacher_batch.inputs.to_device(self.device),
+                    &teacher_attention_mask,
                     false,
                     true,
                     true,
                 )
             });
 
+            let student_attention_mask =
+                seq_len_to_mask(&student_batch.seq_lens, student_batch.inputs.size()[1])
+                    .to_device(self.device);
+            let student_token_mask = student_batch
+                .token_mask
+                .to_kind(Kind::Bool)
+                .to_device(self.device);
+
             let student_logits = student.logits(
-                &batch.inputs.to_device(self.device),
-                &attention_mask,
+                &student_batch.inputs.to_device(self.device),
+                &student_attention_mask,
                 true,
                 false,
                 false,
@@ -196,31 +224,33 @@ impl DistillApp {
             let mut hard_loss = Tensor::zeros(&[], (Kind::Float, self.device));
 
             for (encoder_name, teacher_logits) in teacher_logits {
+                let n_labels = teacher_logits.size()[2];
+
+                // Select the outputs for the relevant time steps.
+                let student_logits = student_logits[&encoder_name]
+                    .masked_select(&student_token_mask.unsqueeze(-1))
+                    .reshape(&[-1, n_labels]);
+                let teacher_logits = teacher_logits
+                    .masked_select(&teacher_token_mask.unsqueeze(-1))
+                    .reshape(&[-1, n_labels]);
+
                 // Compute the soft loss.
-                let student_logits = &student_logits[&encoder_name];
                 let teacher_probs = teacher_logits.softmax(-1, Kind::Float);
                 let student_logprobs = student_logits.log_softmax(-1, Kind::Float);
                 let soft_losses = -(&teacher_probs * &student_logprobs);
-                soft_loss += (soft_losses * &token_mask.unsqueeze(-1)).sum(Kind::Float) / &n_tokens;
+                soft_loss += soft_losses
+                    .sum1(&[-1], false, Kind::Float)
+                    .mean(Kind::Float);
 
                 if self.hard_loss {
                     let teacher_predictions = teacher_logits.argmax(-1, false);
 
-                    let targets_shape = teacher_logits.size();
-                    let batch_size = targets_shape[0];
-                    let seq_len = targets_shape[1];
-
-                    let hard_losses = student_logprobs
-                        .view([batch_size * seq_len, -1])
-                        .g_nll_loss::<&Tensor>(
-                            &teacher_predictions.view([batch_size * seq_len]),
-                            None,
-                            Reduction::None,
-                            -100,
-                        )
-                        .view([batch_size, seq_len]);
-
-                    hard_loss += (hard_losses * &token_mask).sum(Kind::Float) / &n_tokens;
+                    hard_loss += student_logprobs.g_nll_loss::<&Tensor>(
+                        &teacher_predictions,
+                        None,
+                        Reduction::Mean,
+                        -100,
+                    );
                 }
             }
 
@@ -299,7 +329,13 @@ impl DistillApp {
         )
         .or_exit("Cannot construct fresh student model", 1);
 
-        StudentModel { inner, vs }
+        let tokenizer = load_tokenizer(&student_config);
+
+        StudentModel {
+            inner,
+            tokenizer,
+            vs,
+        }
     }
 
     pub fn create_lr_schedules(
@@ -605,7 +641,8 @@ impl StickerApp for DistillApp {
             .or_exit("Cannot parse exponential decay steps", 1);
         let max_len = matches
             .value_of(MAX_LEN)
-            .map(|v| v.parse().or_exit("Cannot parse maximum sentence length", 1));
+            .map(|v| v.parse().or_exit("Cannot parse maximum sentence length", 1))
+            .map(SequenceLength::Tokens);
         let warmup_steps = matches
             .value_of(WARMUP)
             .unwrap()
@@ -658,7 +695,10 @@ impl StickerApp for DistillApp {
         let student_config = load_config(&self.student_config);
         let teacher = Model::load(&self.teacher_config, self.device, true);
 
-        let train_file = File::open(&self.train_data).or_exit("Cannot open train data file", 1);
+        let teacher_train_file =
+            File::open(&self.train_data).or_exit("Cannot open train data file", 1);
+        let student_train_file =
+            File::open(&self.train_data).or_exit("Cannot open train data file", 1);
         let mut validation_file =
             File::open(&self.validation_data).or_exit("Cannot open validation data file", 1);
 
@@ -670,7 +710,8 @@ impl StickerApp for DistillApp {
             &mut optimizer,
             &teacher,
             &student,
-            &train_file,
+            &teacher_train_file,
+            &student_train_file,
             &mut validation_file,
         )
         .or_exit("Model distillation failed", 1);
