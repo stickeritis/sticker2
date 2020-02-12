@@ -12,12 +12,17 @@ matplotlib.use('svg')
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Plot layer weights.')
     parser.add_argument('model', metavar='MODEL', help='model')
-    parser.add_argument('svg', metavar='SVG', help='output SVG')
+    parser.add_argument('output', metavar='OUTPUT', help='output image')
     parser.add_argument(
         '-n',
         '--normalized',
         action='store_true',
         help='plot normalized layer weights')
+    parser.add_argument(
+        '-f',
+        '--format',
+        default='svg',
+        help='format as matplotlib backend')
 
     args = parser.parse_args()
 
@@ -44,4 +49,4 @@ if __name__ == "__main__":
     plt.legend(names)
     plt.xlabel('Layer')
     plt.ylabel('Layer weight')
-    plt.savefig(args.svg, format="svg")
+    plt.savefig(args.output, format=args.format)
