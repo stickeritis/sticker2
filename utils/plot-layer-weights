@@ -23,6 +23,11 @@ if __name__ == "__main__":
         '--format',
         default='svg',
         help='format as matplotlib backend')
+    parser.add_argument(
+        '-t',
+        '--title',
+        default=None,
+        help='plot title')
 
     args = parser.parse_args()
 
@@ -47,6 +52,8 @@ if __name__ == "__main__":
 
     plt.plot(np.array(weights).transpose())
     plt.legend(names)
+    if args.title:
+        plt.title(args.title)
     plt.xlabel('Layer')
     plt.ylabel('Layer weight')
     plt.savefig(args.output, format=args.format)
