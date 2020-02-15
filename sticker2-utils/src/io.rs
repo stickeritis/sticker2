@@ -76,6 +76,7 @@ impl Model {
     /// In contrast to `load_model`, this does not load the parameters
     /// specified in the configuration file, but the parameters from
     /// the HDF5 file at `hdf5_path`.
+    #[cfg(feature = "load-hdf5")]
     pub fn load_from_hdf5(config_path: &str, hdf5_path: &str, device: Device) -> Model {
         let config = load_config(config_path);
         let encoders = load_encoders(&config);
@@ -94,6 +95,12 @@ impl Model {
             tokenizer,
             vs,
         }
+    }
+
+    #[cfg(not(feature = "load-hdf5"))]
+    pub fn load_from_hdf5(_config_path: &str, _hdf5_path: &str, _device: Device) -> Model {
+        eprintln!("Cannot load HDF5 model: sticker2 was compiled without support for HDF5");
+        std::process::exit(1);
     }
 }
 
