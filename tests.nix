@@ -33,7 +33,13 @@ let
     defaultCrateOverrides = crateOverrides;
   };
   cargo_nix = pkgs.callPackage ./nix/Cargo.nix { inherit buildRustCrate; };
-in pkgs.lib.mapAttrsToList (_: drv: drv.build.override {
-  features = [ "model-tests" ];
-  runTests = true;
-}) cargo_nix.workspaceMembers
+in with pkgs; lib.flatten (lib.mapAttrsToList (_: drv: [
+  (drv.build.override {
+    features = [ "model-tests" ];
+    runTests = true;
+  })
+  (drv.build.override {
+    features = [ "load-hdf5" "model-tests" ];
+    runTests = true;
+  })
+]) cargo_nix.workspaceMembers)
