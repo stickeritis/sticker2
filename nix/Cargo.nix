@@ -3028,7 +3028,7 @@ rec {
           "default" = [ "load-hdf5" ];
           "load-hdf5" = [ "hdf5" ];
         };
-        resolvedDefaultFeatures = [ "default" "hdf5" "load-hdf5" ];
+        resolvedDefaultFeatures = [ "hdf5" "load-hdf5" ];
       };
       "sticker2 0.2.0 (path+file:///home/daniel/git/sticker2/sticker2)" = rec {
         crateName = "sticker2";
@@ -3091,6 +3091,7 @@ rec {
           {
             name = "sticker-transformers";
             packageId = "sticker-transformers 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)";
+            usesDefaultFeatures = false;
           }
           {
             name = "tch";
@@ -3116,8 +3117,10 @@ rec {
           }
         ];
         features = {
+          "default" = [ "load-hdf5" ];
+          "load-hdf5" = [ "sticker-transformers/load-hdf5" ];
         };
-        resolvedDefaultFeatures = [ "model-tests" ];
+        resolvedDefaultFeatures = [ "default" "load-hdf5" "model-tests" ];
       };
       "sticker2-utils 0.2.0 (path+file:///home/daniel/git/sticker2/sticker2-utils)" = rec {
         crateName = "sticker2-utils";
@@ -3171,10 +3174,12 @@ rec {
           {
             name = "sticker-transformers";
             packageId = "sticker-transformers 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)";
+            usesDefaultFeatures = false;
           }
           {
             name = "sticker2";
             packageId = "sticker2 0.2.0 (path+file:///home/daniel/git/sticker2/sticker2)";
+            usesDefaultFeatures = false;
           }
           {
             name = "tch";
@@ -3185,7 +3190,11 @@ rec {
             packageId = "threadpool 1.7.1 (registry+https://github.com/rust-lang/crates.io-index)";
           }
         ];
-        
+        features = {
+          "default" = [ "load-hdf5" ];
+          "load-hdf5" = [ "sticker-transformers/load-hdf5" "sticker2/load-hdf5" ];
+        };
+        resolvedDefaultFeatures = [ "default" "load-hdf5" ];
       };
       "strsim 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)" = rec {
         crateName = "strsim";

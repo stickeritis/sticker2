@@ -1,9 +1,13 @@
 use std::borrow::Borrow;
 use std::collections::HashMap;
+#[cfg(feature = "load-hdf5")]
 use std::path;
 
+#[cfg(feature = "load-hdf5")]
 use failure::Fallible;
+#[cfg(feature = "load-hdf5")]
 use hdf5::File;
+#[cfg(feature = "load-hdf5")]
 use sticker_transformers::hdf5_model::LoadFromHDF5;
 use sticker_transformers::layers::Dropout;
 use sticker_transformers::models::bert::{
@@ -60,6 +64,7 @@ impl BertEmbeddingLayer {
         }
     }
 
+    #[cfg(feature = "load-hdf5")]
     fn load_from_hdf5<'a>(
         vs: impl Borrow<Path<'a>>,
         pretrain_config: &PretrainConfig,
@@ -159,6 +164,7 @@ impl BertModel {
         })
     }
 
+    #[cfg(feature = "load-hdf5")]
     /// Construct a model and load parameters from a pretrained model.
     ///
     /// `layer_dropout` is the probability with which layers should
