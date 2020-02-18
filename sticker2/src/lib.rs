@@ -4,6 +4,8 @@ pub mod dataset;
 
 pub mod encoders;
 
+pub mod graph;
+
 pub mod input;
 
 pub mod lr;
