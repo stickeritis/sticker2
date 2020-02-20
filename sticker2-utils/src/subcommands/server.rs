@@ -8,7 +8,7 @@ use conllx::io::{ReadSentence, Reader, Writer};
 use stdinout::OrExit;
 use sticker2::input::Tokenize;
 use sticker2::tagger::Tagger;
-use tch::Device;
+use tch::{self, Device};
 use threadpool::ThreadPool;
 
 use crate::io::Model;
@@ -175,6 +175,17 @@ impl StickerApp for ServerApp {
         let tagger = Tagger::new(self.device, model.model, model.encoders);
 
         let pool = ThreadPool::new(self.n_threads);
+
+        // Set number of PyTorch threads to the number of server
+        // threads.  note that this may result in a larger number of
+        // threads, depending on libtorch build options. E.g. with
+        // OpenMP, each interop thread could create its own intra_op
+        // thread pool.
+        //
+        // If we set the number of Torch threads before creating the
+        // Rust thread pool, using one threads will use all CPUs :(.
+        tch::set_num_threads(self.n_threads as i32);
+        tch::set_num_interop_threads(self.n_threads as i32);
 
         let listener =
             TcpListener::bind(&self.addr).or_exit(format!("Cannot listen on '{}'", self.addr), 1);
