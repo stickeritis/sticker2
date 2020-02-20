@@ -136,15 +136,26 @@ impl From<&EncoderType> for Encoder {
     fn from(encoder_type: &EncoderType) -> Self {
         // We start labeling at 2. 0 is reserved for padding, 1 for continuations.
         match encoder_type {
-            EncoderType::Dependency(DependencyEncoder::RelativePOS) => Encoder::RelativePOS(
-                MutableCategoricalEncoder::new(RelativePOSEncoder, Numberer::new(2)).into(),
-            ),
-            EncoderType::Dependency(DependencyEncoder::RelativePosition) => {
-                Encoder::RelativePosition(
-                    MutableCategoricalEncoder::new(RelativePositionEncoder, Numberer::new(2))
-                        .into(),
+            EncoderType::Dependency {
+                encoder: DependencyEncoder::RelativePOS,
+                root_relation,
+            } => Encoder::RelativePOS(
+                MutableCategoricalEncoder::new(
+                    RelativePOSEncoder::new(root_relation),
+                    Numberer::new(2),
                 )
-            }
+                .into(),
+            ),
+            EncoderType::Dependency {
+                encoder: DependencyEncoder::RelativePosition,
+                root_relation,
+            } => Encoder::RelativePosition(
+                MutableCategoricalEncoder::new(
+                    RelativePositionEncoder::new(root_relation),
+                    Numberer::new(2),
+                )
+                .into(),
+            ),
             EncoderType::Lemma(backoff_strategy) => Encoder::Lemma(
                 MutableCategoricalEncoder::new(
                     EditTreeEncoder::new(*backoff_strategy),
