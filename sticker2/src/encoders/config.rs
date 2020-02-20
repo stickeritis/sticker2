@@ -25,7 +25,10 @@ impl Deref for EncodersConfig {
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub enum EncoderType {
     /// Encoder for syntactical dependencies.
-    Dependency(DependencyEncoder),
+    Dependency {
+        encoder: DependencyEncoder,
+        root_relation: String,
+    },
 
     /// Lemma encoder using edit trees.
     Lemma(BackoffStrategy),

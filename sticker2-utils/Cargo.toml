@@ -18,7 +18,7 @@ ordered-float = { version = "1", features = ["serde"] }
 serde_yaml = "0.8"
 stdinout = "0.4"
 sticker2 = { path = "../sticker2" }
-sticker-encoders = "0.1.4"
+sticker-encoders = "0.2"
 sticker-transformers = "0.4.0"
 tch = "0.1.5"
 threadpool = "1"

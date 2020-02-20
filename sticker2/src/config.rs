@@ -207,7 +207,10 @@ mod tests {
                     encoders: EncodersConfig(vec![
                         NamedEncoderConfig {
                             name: "dep".to_string(),
-                            encoder: EncoderType::Dependency(DependencyEncoder::RelativePOS)
+                            encoder: EncoderType::Dependency {
+                                encoder: DependencyEncoder::RelativePOS,
+                                root_relation: "root".to_string()
+                            }
                         },
                         NamedEncoderConfig {
                             name: "lemma".to_string(),
