@@ -21,6 +21,9 @@ let
     };
 
     torch-sys = attr: {
+      # Remove when we are not using a git version of tch anymore.
+      src = "${attr.src}/torch-sys";
+
       LIBTORCH = "${danieldk.libtorch.v1_4_0}";
     };
   };

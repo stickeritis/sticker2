@@ -17,6 +17,8 @@ const CONFIG: &str = "CONFIG";
 const GPU: &str = "GPU";
 const INPUT: &str = "INPUT";
 const MAX_LEN: &str = "MAX_LEN";
+const NUM_INTEROP_THREADS: &str = "NUM_INTEROP_THREADS";
+const NUM_INTRAOP_THREADS: &str = "NUM_INTRAOP_THREADS";
 const OUTPUT: &str = "OUTPUT";
 const READ_AHEAD: &str = "READ_AHEAD";
 
@@ -25,6 +27,8 @@ pub struct AnnotateApp {
     config: String,
     device: Device,
     input: Option<String>,
+    num_interop_threads: usize,
+    num_intraop_threads: usize,
     max_len: Option<usize>,
     output: Option<String>,
     read_ahead: usize,
@@ -90,6 +94,20 @@ impl StickerApp for AnnotateApp {
                     .help("Use the GPU with the given identifier"),
             )
             .arg(
+                Arg::with_name(NUM_INTEROP_THREADS)
+                    .help("Inter op parallelism threads")
+                    .long("interop-threads")
+                    .value_name("N")
+                    .default_value("4"),
+            )
+            .arg(
+                Arg::with_name(NUM_INTRAOP_THREADS)
+                    .help("Intra op parallelism threads")
+                    .long("intraop-threads")
+                    .value_name("N")
+                    .default_value("4"),
+            )
+            .arg(
                 Arg::with_name(MAX_LEN)
                     .long("maxlen")
                     .value_name("N")
@@ -119,6 +137,16 @@ impl StickerApp for AnnotateApp {
             None => Device::Cpu,
         };
         let input = matches.value_of(INPUT).map(ToOwned::to_owned);
+        let num_interop_threads = matches
+            .value_of(NUM_INTEROP_THREADS)
+            .unwrap()
+            .parse()
+            .or_exit("Cannot number of inter op threads", 1);
+        let num_intraop_threads = matches
+            .value_of(NUM_INTRAOP_THREADS)
+            .unwrap()
+            .parse()
+            .or_exit("Cannot number of intra op threads", 1);
         let max_len = matches
             .value_of(MAX_LEN)
             .map(|v| v.parse().or_exit("Cannot parse maximum sentence length", 1));
@@ -134,6 +162,8 @@ impl StickerApp for AnnotateApp {
             config,
             device,
             input,
+            num_interop_threads,
+            num_intraop_threads,
             max_len,
             output,
             read_ahead,
@@ -141,6 +171,10 @@ impl StickerApp for AnnotateApp {
     }
 
     fn run(&self) {
+        // Set number of PyTorch threads.
+        tch::set_num_threads(self.num_intraop_threads as i32);
+        tch::set_num_interop_threads(self.num_interop_threads as i32);
+
         let model = Model::load(&self.config, self.device, true);
         let tagger = Tagger::new(self.device, model.model, model.encoders);
 
