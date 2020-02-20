@@ -26,9 +26,9 @@ rec {
   # workspaceMembers."${crateName}".build.override { features = [ "default" "feature1" ... ]; }.
   workspaceMembers = {
     "sticker2" = rec {
-      packageId = "sticker2 0.1.1 (path+file:///home/daniel/git/sticker2/sticker2)";
+      packageId = "sticker2 0.2.0 (path+file:///home/daniel/git/sticker2/sticker2)";
       build = internal.buildRustCrateWithFeatures {
-        packageId = "sticker2 0.1.1 (path+file:///home/daniel/git/sticker2/sticker2)";
+        packageId = "sticker2 0.2.0 (path+file:///home/daniel/git/sticker2/sticker2)";
       };
 
       # Debug support which might change between releases.
@@ -36,9 +36,9 @@ rec {
       debug = internal.debugCrate { inherit packageId; };
     };
     "sticker2-utils" = rec {
-      packageId = "sticker2-utils 0.1.0 (path+file:///home/daniel/git/sticker2/sticker2-utils)";
+      packageId = "sticker2-utils 0.2.0 (path+file:///home/daniel/git/sticker2/sticker2-utils)";
       build = internal.buildRustCrateWithFeatures {
-        packageId = "sticker2-utils 0.1.0 (path+file:///home/daniel/git/sticker2/sticker2-utils)";
+        packageId = "sticker2-utils 0.2.0 (path+file:///home/daniel/git/sticker2/sticker2-utils)";
       };
 
       # Debug support which might change between releases.
@@ -3030,9 +3030,9 @@ rec {
         };
         resolvedDefaultFeatures = [ "default" "hdf5" "load-hdf5" ];
       };
-      "sticker2 0.1.1 (path+file:///home/daniel/git/sticker2/sticker2)" = rec {
+      "sticker2 0.2.0 (path+file:///home/daniel/git/sticker2/sticker2)" = rec {
         crateName = "sticker2";
-        version = "0.1.1";
+        version = "0.2.0";
         edition = "2018";
         src = (builtins.filterSource sourceFilter ../sticker2);
         authors = [
@@ -3119,9 +3119,9 @@ rec {
         };
         resolvedDefaultFeatures = [ "model-tests" ];
       };
-      "sticker2-utils 0.1.0 (path+file:///home/daniel/git/sticker2/sticker2-utils)" = rec {
+      "sticker2-utils 0.2.0 (path+file:///home/daniel/git/sticker2/sticker2-utils)" = rec {
         crateName = "sticker2-utils";
-        version = "0.1.0";
+        version = "0.2.0";
         edition = "2018";
         crateBin = [
           { name = "sticker2"; path = "src/main.rs"; }
@@ -3174,7 +3174,7 @@ rec {
           }
           {
             name = "sticker2";
-            packageId = "sticker2 0.1.1 (path+file:///home/daniel/git/sticker2/sticker2)";
+            packageId = "sticker2 0.2.0 (path+file:///home/daniel/git/sticker2/sticker2)";
           }
           {
             name = "tch";
