@@ -98,12 +98,10 @@ impl Tagger {
         // to ndarray tensors, since they are easier to work with
         // in Rust.
         let mask = seq_len_to_mask(&tensors.seq_lens, tensors.inputs.size()[1]);
-        for (encoder_name, top_k) in tch::no_grad(|| {
-            self.model.top_k(
-                &tensors.inputs.to_device(self.device),
-                &mask.to_device(self.device),
-            )
-        }) {
+        for (encoder_name, top_k) in self.model.top_k(
+            &tensors.inputs.to_device(self.device),
+            &mask.to_device(self.device),
+        ) {
             let (top_k_probs, top_k_labels) = top_k;
             let top_k_labels: ArrayD<i32> = (&top_k_labels).try_into()?;
             let top_k_probs: ArrayD<f32> = (&top_k_probs).try_into()?;

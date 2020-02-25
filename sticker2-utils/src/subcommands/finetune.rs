@@ -10,7 +10,7 @@ use sticker2::dataset::{ConllxDataSet, DataSet, SequenceLength};
 use sticker2::encoders::Encoders;
 use sticker2::input::Tokenize;
 use sticker2::lr::{ExponentialDecay, LearningRateSchedule, PlateauLearningRate};
-use sticker2::model::BertModel;
+use sticker2::model::{BertModel, FreezeLayers};
 use sticker2::optimizers::{AdamW, AdamWConfig};
 use sticker2::util::seq_len_to_mask;
 use tch::{self, Device, Kind};
@@ -169,8 +169,11 @@ impl FinetuneApp {
                     .collect(),
                 self.label_smoothing,
                 optimizer.is_some(),
-                !self.finetune_embeds || freeze_encoder,
-                freeze_encoder,
+                FreezeLayers {
+                    embeddings: !self.finetune_embeds || freeze_encoder,
+                    encoder: freeze_encoder,
+                    classifiers: !optimizer.is_some(),
+                },
                 self.include_continuations,
             );
 
@@ -518,8 +521,8 @@ impl StickerApp for FinetuneApp {
             )
             .or_exit("Cannot run train epoch", 1);
 
-            last_acc = tch::no_grad(|| {
-                self.run_epoch(
+            last_acc = self
+                .run_epoch(
                     &model.encoders,
                     &*model.tokenizer,
                     &model.model,
@@ -529,8 +532,7 @@ impl StickerApp for FinetuneApp {
                     &mut global_step,
                     epoch,
                 )
-                .or_exit("Cannot run valdidation epoch", 1)
-            });
+                .or_exit("Cannot run valdidation epoch", 1);
 
             if last_acc > best_acc {
                 best_epoch = epoch;
