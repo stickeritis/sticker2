@@ -220,16 +220,15 @@ impl BertModel {
         inputs: &Tensor,
         attention_mask: &Tensor,
         train: bool,
-        freeze_embeddings: bool,
-        freeze_encoder: bool,
+        freeze_layers: FreezeLayers,
     ) -> Vec<BertLayerOutput> {
-        let embeds = if freeze_embeddings {
+        let embeds = if freeze_layers.embeddings {
             tch::no_grad(|| self.embeddings.forward_t(inputs, train))
         } else {
             self.embeddings.forward_t(inputs, train)
         };
 
-        let mut encoded = if freeze_encoder {
+        let mut encoded = if freeze_layers.encoder {
             tch::no_grad(|| {
                 self.encoder
                     .forward_t(&embeds, Some(&attention_mask), train)
@@ -240,7 +239,11 @@ impl BertModel {
         };
 
         for layer in &mut encoded {
-            layer.output = self.layers_dropout.forward_t(&layer.output, train);
+            layer.output = if freeze_layers.classifiers {
+                tch::no_grad(|| self.layers_dropout.forward_t(&layer.output, train))
+            } else {
+                self.layers_dropout.forward_t(&layer.output, train)
+            };
         }
 
         encoded
@@ -259,16 +262,9 @@ impl BertModel {
         inputs: &Tensor,
         attention_mask: &Tensor,
         train: bool,
-        freeze_embeddings: bool,
-        freeze_encoder: bool,
+        freeze_layers: FreezeLayers,
     ) -> HashMap<String, Tensor> {
-        let encoding = self.encode(
-            inputs,
-            attention_mask,
-            train,
-            freeze_embeddings,
-            freeze_encoder,
-        );
+        let encoding = self.encode(inputs, attention_mask, train, freeze_layers);
 
         self.classifiers
             .iter()
@@ -304,17 +300,10 @@ impl BertModel {
         targets: &HashMap<String, Tensor>,
         label_smoothing: Option<f64>,
         train: bool,
-        freeze_embeddings: bool,
-        freeze_encoder: bool,
+        freeze_layers: FreezeLayers,
         include_continuations: bool,
     ) -> (Tensor, HashMap<String, Tensor>, HashMap<String, Tensor>) {
-        let encoding = self.encode(
-            inputs,
-            attention_mask,
-            train,
-            freeze_embeddings,
-            freeze_encoder,
-        );
+        let encoding = self.encode(inputs, attention_mask, train, freeze_layers);
 
         let token_mask = token_mask.to_kind(Kind::Float);
         let token_mask_sum = token_mask.sum(Kind::Float);
@@ -356,7 +345,16 @@ impl BertModel {
         inputs: &Tensor,
         attention_mask: &Tensor,
     ) -> HashMap<String, (Tensor, Tensor)> {
-        let encoding = self.encode(inputs, attention_mask, false, true, true);
+        let encoding = self.encode(
+            inputs,
+            attention_mask,
+            false,
+            FreezeLayers {
+                embeddings: true,
+                encoder: true,
+                classifiers: true,
+            },
+        );
         self.classifiers
             .iter()
             .map(|(encoder_name, classifier)| {
@@ -377,4 +375,11 @@ impl BertModel {
             })
             .collect()
     }
+}
+
+#[derive(Clone, Copy, Debug)]
+pub struct FreezeLayers {
+    pub embeddings: bool,
+    pub encoder: bool,
+    pub classifiers: bool,
 }

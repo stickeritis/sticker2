@@ -14,7 +14,7 @@ use sticker2::dataset::{ConllxDataSet, DataSet, SequenceLength};
 use sticker2::encoders::Encoders;
 use sticker2::input::Tokenize;
 use sticker2::lr::{ExponentialDecay, LearningRateSchedule};
-use sticker2::model::BertModel;
+use sticker2::model::{BertModel, FreezeLayers};
 use sticker2::optimizers::{AdamW, AdamWConfig};
 use sticker2::tensor::Tensors;
 use sticker2::util::seq_len_to_mask;
@@ -132,15 +132,13 @@ impl DistillApp {
                     &student.inner,
                 )?;
 
-                let acc = tch::no_grad(|| {
-                    self.validation_epoch(
-                        &teacher.encoders,
-                        &*student.tokenizer,
-                        &student.inner,
-                        validation_file,
-                        global_step,
-                    )
-                })?;
+                let acc = self.validation_epoch(
+                    &teacher.encoders,
+                    &*student.tokenizer,
+                    &student.inner,
+                    validation_file,
+                    global_step,
+                )?;
 
                 if acc > best_acc {
                     best_step = global_step;
@@ -194,15 +192,16 @@ impl DistillApp {
                 .to_kind(Kind::Bool)
                 .to_device(self.device);
 
-            let teacher_logits = tch::no_grad(|| {
-                teacher.logits(
-                    &teacher_batch.inputs.to_device(self.device),
-                    &teacher_attention_mask,
-                    false,
-                    true,
-                    true,
-                )
-            });
+            let teacher_logits = teacher.logits(
+                &teacher_batch.inputs.to_device(self.device),
+                &teacher_attention_mask,
+                false,
+                FreezeLayers {
+                    embeddings: true,
+                    encoder: true,
+                    classifiers: true,
+                },
+            );
 
             let student_attention_mask =
                 seq_len_to_mask(&student_batch.seq_lens, student_batch.inputs.size()[1])
@@ -216,8 +215,11 @@ impl DistillApp {
                 &student_batch.inputs.to_device(self.device),
                 &student_attention_mask,
                 true,
-                false,
-                false,
+                FreezeLayers {
+                    embeddings: false,
+                    encoder: false,
+                    classifiers: false,
+                },
             );
 
             let mut soft_loss = Tensor::zeros(&[], (Kind::Float, self.device));
@@ -407,8 +409,11 @@ impl DistillApp {
                     .collect(),
                 None,
                 false,
-                true,
-                true,
+                FreezeLayers {
+                    embeddings: true,
+                    encoder: true,
+                    classifiers: true,
+                },
                 false,
             );
 
