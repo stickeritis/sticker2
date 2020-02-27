@@ -14,7 +14,7 @@ use sticker2::dataset::{ConllxDataSet, DataSet, SequenceLength};
 use sticker2::encoders::Encoders;
 use sticker2::input::Tokenize;
 use sticker2::lr::{ExponentialDecay, LearningRateSchedule};
-use sticker2::model::{BertModel, FreezeLayers};
+use sticker2::model::bert::{BertModel, FreezeLayers};
 use sticker2::optimizers::{AdamW, AdamWConfig};
 use sticker2::tensor::Tensors;
 use sticker2::util::seq_len_to_mask;
@@ -317,7 +317,12 @@ impl DistillApp {
         ConllxDataSet::new(read)
     }
 
-    fn fresh_student(&self, student_config: &Config, teacher: &Model) -> StudentModel {
+    fn fresh_student(
+        &self,
+        student_config: &Config,
+        teacher_config: &Config,
+        teacher: &Model,
+    ) -> StudentModel {
         let pretrain_config = load_pretrain_config(student_config);
 
         let vs = VarStore::new(self.device);
@@ -326,6 +331,7 @@ impl DistillApp {
             vs.root(),
             &pretrain_config,
             &teacher.encoders,
+            teacher_config.biaffine.as_ref(),
             0.1,
             student_config.model.position_embeddings.clone(),
         )
@@ -707,7 +713,11 @@ impl StickerApp for DistillApp {
         let mut validation_file =
             File::open(&self.validation_data).or_exit("Cannot open validation data file", 1);
 
-        let student = self.fresh_student(&student_config, &teacher);
+        let student = self.fresh_student(
+            &student_config,
+            &load_config(&self.teacher_config),
+            &teacher,
+        );
 
         let mut optimizer = AdamW::new(&student.vs);
 

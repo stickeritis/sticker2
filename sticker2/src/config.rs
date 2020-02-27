@@ -22,6 +22,13 @@ pub struct Input {
     pub vocab: String,
 }
 
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct Biaffine {
+    pub arc_dims: usize,
+    pub label_dims: usize,
+}
+
 /// Labeler configuration.
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
@@ -93,6 +100,11 @@ pub enum PretrainModelType {
 pub struct Config {
     /// Configuration of the input representations.
     pub input: Input,
+
+    /// Configuration for biaffine parsing.
+    ///
+    /// When this configuration is absent, biaffine parsing is not used.
+    pub biaffine: Option<Biaffine>,
 
     /// Configuration of the labeler.
     pub labeler: Labeler,
@@ -202,6 +214,7 @@ mod tests {
                 input: Input {
                     vocab: "bert-base-german-cased-vocab.txt".to_string()
                 },
+                biaffine: None,
                 labeler: Labeler {
                     labels: "sticker.labels".to_string(),
                     encoders: EncodersConfig(vec![

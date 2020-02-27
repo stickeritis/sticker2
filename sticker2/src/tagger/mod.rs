@@ -9,7 +9,7 @@ use tch::Device;
 
 use crate::encoders::Encoders;
 use crate::input::SentenceWithPieces;
-use crate::model::BertModel;
+use crate::model::bert::BertModel;
 use crate::tensor::{NoLabels, TensorBuilder, Tensors};
 use crate::util::seq_len_to_mask;
 

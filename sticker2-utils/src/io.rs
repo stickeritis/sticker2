@@ -4,7 +4,7 @@ use stdinout::OrExit;
 use sticker2::config::{Config, PretrainConfig, TomlRead};
 use sticker2::encoders::Encoders;
 use sticker2::input::Tokenize;
-use sticker2::model::BertModel;
+use sticker2::model::bert::BertModel;
 use tch::nn::VarStore;
 use tch::Device;
 
@@ -51,6 +51,7 @@ impl Model {
             vs.root(),
             &pretrain_config,
             &encoders,
+            config.biaffine.as_ref(),
             0.0,
             config.model.position_embeddings,
         )
@@ -85,9 +86,15 @@ impl Model {
 
         let vs = VarStore::new(device);
 
-        let model =
-            BertModel::from_pretrained(vs.root(), &pretrain_config, hdf5_path, &encoders, 0.5)
-                .or_exit("Cannot load pretrained model parameters", 1);
+        let model = BertModel::from_pretrained(
+            vs.root(),
+            &pretrain_config,
+            hdf5_path,
+            &encoders,
+            config.biaffine.as_ref(),
+            0.5,
+        )
+        .or_exit("Cannot load pretrained model parameters", 1);
 
         Model {
             encoders,
