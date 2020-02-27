@@ -15,16 +15,14 @@ use sticker_transformers::models::bert::{
 };
 use sticker_transformers::models::roberta::RobertaEmbeddings;
 use sticker_transformers::models::sinusoidal::SinusoidalEmbeddings;
-use sticker_transformers::scalar_weighting::{
-    ScalarWeightClassifier, ScalarWeightClassifierConfig,
-};
 use tch::nn::{ModuleT, Path};
-use tch::{self, Kind, Tensor};
+use tch::{self, Tensor};
 
 use crate::config::{PositionEmbeddings, PretrainConfig};
 use crate::encoders::Encoders;
+use crate::model::seq_classifiers::{SequenceClassifiers, SequenceClassifiersLoss};
 
-trait PretrainBertConfig {
+pub trait PretrainBertConfig {
     fn bert_config(&self) -> &BertConfig;
 }
 
@@ -110,7 +108,7 @@ impl ModuleT for BertEmbeddingLayer {
 pub struct BertModel {
     embeddings: BertEmbeddingLayer,
     encoder: BertEncoder,
-    classifiers: HashMap<String, ScalarWeightClassifier>,
+    seq_classifiers: SequenceClassifiers,
     layers_dropout: Dropout,
 }
 
@@ -133,34 +131,13 @@ impl BertModel {
         let embeddings =
             BertEmbeddingLayer::new(vs.sub("encoder"), pretrain_config, position_embeddings);
         let encoder = BertEncoder::new(vs.sub("encoder"), bert_config)?;
-
-        let classifiers = encoders
-            .iter()
-            .map(|encoder| {
-                (
-                    encoder.name().to_owned(),
-                    ScalarWeightClassifier::new(
-                        vs.sub("classifiers")
-                            .sub(format!("{}_classifier", encoder.name())),
-                        &ScalarWeightClassifierConfig {
-                            dropout_prob: bert_config.hidden_dropout_prob,
-                            hidden_size: bert_config.hidden_size,
-                            input_size: bert_config.hidden_size,
-                            layer_dropout_prob: 0.1,
-                            layer_norm_eps: bert_config.layer_norm_eps,
-                            n_layers: bert_config.num_hidden_layers,
-                            n_labels: encoder.encoder().len() as i64,
-                        },
-                    ),
-                )
-            })
-            .collect();
+        let seq_classifiers = SequenceClassifiers::new(vs, pretrain_config, encoders);
 
         Ok(BertModel {
-            classifiers,
             embeddings,
             encoder,
             layers_dropout: Dropout::new(layers_dropout),
+            seq_classifiers,
         })
     }
 
@@ -190,33 +167,13 @@ impl BertModel {
             pretrained_file.group("bert/encoder")?,
         )?;
 
-        let classifiers = encoders
-            .iter()
-            .map(|encoder| {
-                (
-                    encoder.name().to_owned(),
-                    ScalarWeightClassifier::new(
-                        vs.sub("classifiers")
-                            .sub(format!("{}_classifier", encoder.name())),
-                        &ScalarWeightClassifierConfig {
-                            dropout_prob: bert_config.hidden_dropout_prob,
-                            hidden_size: bert_config.hidden_size,
-                            input_size: bert_config.hidden_size,
-                            layer_dropout_prob: 0.1,
-                            layer_norm_eps: bert_config.layer_norm_eps,
-                            n_layers: bert_config.num_hidden_layers,
-                            n_labels: encoder.encoder().len() as i64,
-                        },
-                    ),
-                )
-            })
-            .collect();
+        let seq_classifiers = SequenceClassifiers::new(vs, pretrain_config, encoders);
 
         Ok(BertModel {
             embeddings,
             encoder,
             layers_dropout: Dropout::new(layers_dropout),
-            classifiers,
+            seq_classifiers,
         })
     }
 
@@ -271,16 +228,7 @@ impl BertModel {
         freeze_layers: FreezeLayers,
     ) -> HashMap<String, Tensor> {
         let encoding = self.encode(inputs, attention_mask, train, freeze_layers);
-
-        self.classifiers
-            .iter()
-            .map(|(encoder_name, classifier)| {
-                (
-                    encoder_name.to_string(),
-                    classifier.logits(&encoding, train),
-                )
-            })
-            .collect()
+        self.seq_classifiers.forward_t(&encoding, train)
     }
 
     /// Compute the loss given a batch of inputs and target labels.
@@ -308,38 +256,32 @@ impl BertModel {
         train: bool,
         freeze_layers: FreezeLayers,
         include_continuations: bool,
-    ) -> (Tensor, HashMap<String, Tensor>, HashMap<String, Tensor>) {
+    ) -> SequenceClassifiersLoss {
         let encoding = self.encode(inputs, attention_mask, train, freeze_layers);
 
-        let token_mask = token_mask.to_kind(Kind::Float);
-        let token_mask_sum = token_mask.sum(Kind::Float);
-
-        let mut encoder_specific_loss = HashMap::with_capacity(self.classifiers.len());
-        let mut encoder_specific_accuracy = HashMap::with_capacity(self.classifiers.len());
-        for (encoder_name, classifier) in &self.classifiers {
-            let (loss, correct) =
-                classifier.losses(&encoding, &targets[encoder_name], label_smoothing, train);
-            let loss = if include_continuations {
-                (loss * attention_mask).sum(Kind::Float) / &attention_mask.sum(Kind::Float)
-            } else {
-                (loss * &token_mask).sum(Kind::Float) / &token_mask_sum
-            };
-            let acc = (correct * &token_mask).sum(Kind::Float) / &token_mask_sum;
-
-            encoder_specific_loss.insert(encoder_name.clone(), loss);
-            encoder_specific_accuracy.insert(encoder_name.clone(), acc);
+        if freeze_layers.classifiers {
+            tch::no_grad(|| {
+                self.seq_classifiers.loss(
+                    &encoding,
+                    attention_mask,
+                    token_mask,
+                    targets,
+                    label_smoothing,
+                    train,
+                    include_continuations,
+                )
+            })
+        } else {
+            self.seq_classifiers.loss(
+                &encoding,
+                attention_mask,
+                token_mask,
+                targets,
+                label_smoothing,
+                train,
+                include_continuations,
+            )
         }
-
-        let summed_loss = encoder_specific_loss.values().fold(
-            Tensor::zeros(&[], (Kind::Float, inputs.device())),
-            |summed_loss, loss| summed_loss + loss,
-        );
-
-        (
-            summed_loss,
-            encoder_specific_loss,
-            encoder_specific_accuracy,
-        )
     }
 
     /// Compute the top-k labels for each encoder for the input.
@@ -361,25 +303,8 @@ impl BertModel {
                 classifiers: true,
             },
         );
-        self.classifiers
-            .iter()
-            .map(|(encoder_name, classifier)| {
-                let (probs, mut labels) = classifier
-                    .forward(&encoding, false)
-                    // Exclude first two classes (padding and continuation).
-                    .slice(-1, 2, -1, 1)
-                    .topk(3, -1, true, true);
 
-                // Fix label offsets.
-                labels += 2;
-
-                (
-                    encoder_name.to_string(),
-                    // XXX: make k configurable
-                    (probs, labels),
-                )
-            })
-            .collect()
+        self.seq_classifiers.top_k(&encoding)
     }
 }
 

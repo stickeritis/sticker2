@@ -397,7 +397,7 @@ impl DistillApp {
 
             let attention_mask = seq_len_to_mask(&batch.seq_lens, batch.inputs.size()[1]);
 
-            let (summed_loss, encoder_specific_loss, encoder_specific_accuracy) = model.loss(
+            let model_loss = model.loss(
                 &batch.inputs.to_device(self.device),
                 &attention_mask.to_device(self.device),
                 &batch.token_mask.to_device(self.device),
@@ -420,19 +420,20 @@ impl DistillApp {
             let n_batch_tokens = i64::from(batch.token_mask.sum(Kind::Int64));
             n_tokens += n_batch_tokens;
 
-            let scalar_loss: f32 = summed_loss.sum(Kind::Float).into();
+            let scalar_loss: f32 = model_loss.summed_loss.sum(Kind::Float).into();
 
-            for (encoder_name, loss) in encoder_specific_loss {
+            for (encoder_name, loss) in model_loss.encoder_losses {
                 match encoder_accuracy.entry(encoder_name.clone()) {
                     Entry::Vacant(entry) => {
                         entry.insert(
-                            f32::from(&encoder_specific_accuracy[&encoder_name])
+                            f32::from(&model_loss.encoder_accuracies[&encoder_name])
                                 * n_batch_tokens as f32,
                         );
                     }
                     Entry::Occupied(mut entry) => {
-                        *entry.get_mut() += f32::from(&encoder_specific_accuracy[&encoder_name])
-                            * n_batch_tokens as f32;
+                        *entry.get_mut() +=
+                            f32::from(&model_loss.encoder_accuracies[&encoder_name])
+                                * n_batch_tokens as f32;
                     }
                 };
 

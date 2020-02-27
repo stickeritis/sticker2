@@ -157,7 +157,7 @@ impl FinetuneApp {
 
             let attention_mask = seq_len_to_mask(&batch.seq_lens, batch.inputs.size()[1]);
 
-            let (summed_loss, encoder_specific_loss, encoder_specific_accuracy) = model.loss(
+            let model_loss = model.loss(
                 &batch.inputs.to_device(self.device),
                 &attention_mask.to_device(self.device),
                 &batch.token_mask.to_device(self.device),
@@ -180,10 +180,10 @@ impl FinetuneApp {
             let n_batch_tokens = i64::from(batch.token_mask.sum(Kind::Int64));
             n_tokens += n_batch_tokens;
 
-            let scalar_loss: f32 = summed_loss.sum(Kind::Float).into();
+            let scalar_loss: f32 = model_loss.summed_loss.sum(Kind::Float).into();
 
             if let Some(ref mut optimizer) = optimizer {
-                optimizer.backward_step(&summed_loss.sum(Kind::Float), |name| {
+                optimizer.backward_step(&model_loss.summed_loss.sum(Kind::Float), |name| {
                     let mut config = AdamWConfig::default();
 
                     // Use weight decay for all variables, except for
@@ -209,9 +209,10 @@ impl FinetuneApp {
                 }
             }
 
-            for (encoder_name, loss) in encoder_specific_loss {
+            for (encoder_name, loss) in model_loss.encoder_losses {
                 *encoder_accuracy.entry(encoder_name.clone()).or_insert(0f32) +=
-                    f32::from(&encoder_specific_accuracy[&encoder_name]) * n_batch_tokens as f32;
+                    f32::from(&model_loss.encoder_accuracies[&encoder_name])
+                        * n_batch_tokens as f32;
                 *encoder_loss.entry(encoder_name).or_insert(0f32) +=
                     f32::from(loss) * n_batch_tokens as f32;
             }
