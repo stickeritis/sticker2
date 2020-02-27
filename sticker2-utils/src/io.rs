@@ -4,7 +4,7 @@ use stdinout::OrExit;
 use sticker2::config::{Config, PretrainConfig, TomlRead};
 use sticker2::encoders::Encoders;
 use sticker2::input::Tokenize;
-use sticker2::model::BertModel;
+use sticker2::model::bert::BertModel;
 use tch::nn::VarStore;
 use tch::Device;
 

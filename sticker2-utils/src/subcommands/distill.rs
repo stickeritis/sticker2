@@ -14,7 +14,7 @@ use sticker2::dataset::{ConllxDataSet, DataSet, SequenceLength};
 use sticker2::encoders::Encoders;
 use sticker2::input::Tokenize;
 use sticker2::lr::{ExponentialDecay, LearningRateSchedule};
-use sticker2::model::{BertModel, FreezeLayers};
+use sticker2::model::bert::{BertModel, FreezeLayers};
 use sticker2::optimizers::{AdamW, AdamWConfig};
 use sticker2::tensor::Tensors;
 use sticker2::util::seq_len_to_mask;
