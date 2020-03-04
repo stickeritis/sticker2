@@ -3810,7 +3810,7 @@ rec {
           }
           {
             name = "wordpieces";
-            packageId = "wordpieces 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)";
+            packageId = "wordpieces 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)";
           }
         ];
         devDependencies = [
@@ -4730,11 +4730,11 @@ rec {
         };
         resolvedDefaultFeatures = [ "serde" "serialization-serde" "transactions" ];
       };
-      "wordpieces 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = rec {
+      "wordpieces 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)" = rec {
         crateName = "wordpieces";
-        version = "0.2.0";
+        version = "0.2.1";
         edition = "2018";
-        sha256 = "07jf70sawf3baxk5n9ka4ddnzg1k0rfrdk3cayk0588bl18x92km";
+        sha256 = "0hglvqhb8kw8198wf4jzcnbhi2mc6ppwyr6b5y6gy0vgkyk8r6c1";
         authors = [
           "Daniël de Kok <me@danieldk.eu>"
           "Tobias Pütz <tobias.puetz@uni-tuebingen.de"
