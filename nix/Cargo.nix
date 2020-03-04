@@ -3724,7 +3724,7 @@ rec {
           }
           {
             name = "tch";
-            packageId = "tch 0.1.6 (git+https://github.com/LaurentMazare/tch-rs.git?rev=39851f24#39851f24af8e12321ec51386fe3be4e05c5ad90e)";
+            packageId = "tch 0.1.6 (git+https://github.com/LaurentMazare/tch-rs.git?rev=c631fc4b8bb2#c631fc4b8bb22df1e10e2c1468e6302ffec8c870)";
           }
         ];
         features = {
@@ -3802,7 +3802,7 @@ rec {
           }
           {
             name = "tch";
-            packageId = "tch 0.1.6 (git+https://github.com/LaurentMazare/tch-rs.git?rev=39851f24#39851f24af8e12321ec51386fe3be4e05c5ad90e)";
+            packageId = "tch 0.1.6 (git+https://github.com/LaurentMazare/tch-rs.git?rev=c631fc4b8bb2#c631fc4b8bb22df1e10e2c1468e6302ffec8c870)";
           }
           {
             name = "toml";
@@ -3898,7 +3898,7 @@ rec {
           }
           {
             name = "tch";
-            packageId = "tch 0.1.6 (git+https://github.com/LaurentMazare/tch-rs.git?rev=39851f24#39851f24af8e12321ec51386fe3be4e05c5ad90e)";
+            packageId = "tch 0.1.6 (git+https://github.com/LaurentMazare/tch-rs.git?rev=c631fc4b8bb2#c631fc4b8bb22df1e10e2c1468e6302ffec8c870)";
           }
           {
             name = "threadpool";
@@ -4021,14 +4021,14 @@ rec {
         };
         resolvedDefaultFeatures = [ "default" "proc-macro" ];
       };
-      "tch 0.1.6 (git+https://github.com/LaurentMazare/tch-rs.git?rev=39851f24#39851f24af8e12321ec51386fe3be4e05c5ad90e)" = rec {
+      "tch 0.1.6 (git+https://github.com/LaurentMazare/tch-rs.git?rev=c631fc4b8bb2#c631fc4b8bb22df1e10e2c1468e6302ffec8c870)" = rec {
         crateName = "tch";
         version = "0.1.6";
         edition = "2018";
         src = pkgs.fetchgit {
           url = "https://github.com/LaurentMazare/tch-rs.git";
-          rev = "39851f24af8e12321ec51386fe3be4e05c5ad90e";
-          sha256 = "1l0r65lh8z8ard25ykrg6lpz3bml210fjijbj2fppknqiwkwngxb";
+          rev = "c631fc4b8bb22df1e10e2c1468e6302ffec8c870";
+          sha256 = "0cgwlmkc7m9jc81ngm97m3mxb5m7b34kmy2pr43j8wr4nswaqf9v";
         };
         authors = [
           "Laurent Mazare <lmazare@gmail.com>"
@@ -4056,7 +4056,7 @@ rec {
           }
           {
             name = "torch-sys";
-            packageId = "torch-sys 0.1.6 (git+https://github.com/LaurentMazare/tch-rs.git?rev=39851f24#39851f24af8e12321ec51386fe3be4e05c5ad90e)";
+            packageId = "torch-sys 0.1.6 (git+https://github.com/LaurentMazare/tch-rs.git?rev=c631fc4b8bb2#c631fc4b8bb22df1e10e2c1468e6302ffec8c870)";
           }
           {
             name = "zip";
@@ -4207,14 +4207,14 @@ rec {
         };
         resolvedDefaultFeatures = [ "default" ];
       };
-      "torch-sys 0.1.6 (git+https://github.com/LaurentMazare/tch-rs.git?rev=39851f24#39851f24af8e12321ec51386fe3be4e05c5ad90e)" = rec {
+      "torch-sys 0.1.6 (git+https://github.com/LaurentMazare/tch-rs.git?rev=c631fc4b8bb2#c631fc4b8bb22df1e10e2c1468e6302ffec8c870)" = rec {
         crateName = "torch-sys";
         version = "0.1.6";
         edition = "2018";
         src = pkgs.fetchgit {
           url = "https://github.com/LaurentMazare/tch-rs.git";
-          rev = "39851f24af8e12321ec51386fe3be4e05c5ad90e";
-          sha256 = "1l0r65lh8z8ard25ykrg6lpz3bml210fjijbj2fppknqiwkwngxb";
+          rev = "c631fc4b8bb22df1e10e2c1468e6302ffec8c870";
+          sha256 = "0cgwlmkc7m9jc81ngm97m3mxb5m7b34kmy2pr43j8wr4nswaqf9v";
         };
         authors = [
           "Laurent Mazare <lmazare@gmail.com>"
