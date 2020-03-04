@@ -6,8 +6,11 @@ use tch::Tensor;
 /// Configuration for the `Bilinear` layer.
 #[derive(Clone, Copy, Debug)]
 pub struct PairwiseBilinearConfig {
-    /// The number of features.
-    pub features: i64,
+    /// The number of input features.
+    pub in_features: i64,
+
+    /// The number of output features.
+    pub out_features: i64,
 
     /// Standard deviation for random initialization.
     pub initializer_range: f64,
@@ -25,11 +28,23 @@ pub struct PairwiseBilinear {
 impl PairwiseBilinear {
     /// Construct a new bilinear layer.
     pub fn new<'a>(vs: impl Borrow<Path<'a>>, config: &PairwiseBilinearConfig) -> Self {
+        assert!(
+            config.in_features > 0,
+            "in_features should be > 0, was: {}",
+            config.in_features,
+        );
+
+        assert!(
+            config.out_features > 0,
+            "out_features should be > 0, was: {}",
+            config.out_features,
+        );
+
         let vs = vs.borrow();
 
         let weight = vs.var(
             "weight",
-            &[config.features, config.features],
+            &[config.in_features, config.out_features, config.in_features],
             Init::Randn {
                 mean: 0.,
                 stdev: config.initializer_range,
@@ -42,8 +57,8 @@ impl PairwiseBilinear {
     /// Apply this layer to the given inputs.
     ///
     /// Both inputs must have the same shape. Returns a tensor of
-    /// shape `[batch_size, seq_len, seq_len]` given inputs of shape
-    /// `[batch_size, seq_len, features]`.
+    /// shape `[batch_size, seq_len, seq_len, out_features]` given
+    /// inputs of shape `[batch_size, seq_len, in_features]`.
     pub fn forward(&self, input1: &Tensor, input2: &Tensor) -> Tensor {
         assert_eq!(
             input1.size(),
@@ -62,14 +77,12 @@ impl PairwiseBilinear {
 
         // The shapes of the inputs are [batch_size, max_seq_len, features].
         // After matrix multiplication, we get the intermediate shape
-        // [batch_size, max_seq_len, features].
-        let intermediate = input1.matmul(&self.weight);
+        // [batch_size, max_seq_len, out_features, in_features].
+        let intermediate = Tensor::einsum("blh,hfh->blfh", &[input1, &self.weight]);
 
-        // Transpose the second input to obtain the shape
-        // [batch_size, features, max_seq_len]. We perform a matrix
-        // multiplication to get the output with the shape
-        // [batch_size, seq_len, seq_len].
-        intermediate.matmul(&input2.transpose(1, 2))
+        // We perform a matrix multiplication to get the output with
+        // the shape [batch_size, seq_len, seq_len, out_features].
+        Tensor::einsum("blh,bmfh->blmf", &[input2, &intermediate])
     }
 }
 
@@ -91,11 +104,12 @@ mod tests {
         let bilinear = PairwiseBilinear::new(
             vs.root(),
             &PairwiseBilinearConfig {
-                features: 200,
+                in_features: 200,
+                out_features: 5,
                 initializer_range: 0.02,
             },
         );
 
-        assert_eq!(bilinear.forward(&input1, &input2).size(), &[64, 10, 10]);
+        assert_eq!(bilinear.forward(&input1, &input2).size(), &[64, 10, 10, 5]);
     }
 }
