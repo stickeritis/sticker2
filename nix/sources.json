@@ -48,10 +48,10 @@
         "homepage": null,
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "73c51e064a9a730ebba9518d960755d287a86035",
-        "sha256": "0a0jdh5j54ji4m09ppzl2vrqp1ccw2zndsq7ick6jbckc18lf094",
+        "rev": "cc90ececa78a269bcf185e62e160a0eed4d45a14",
+        "sha256": "0rnavvhnj2ihajrlfb3pl3fn2yj73j8b4d5r4wpakqz5q53xzvmg",
         "type": "tarball",
-        "url": "https://github.com/NixOS/nixpkgs/archive/73c51e064a9a730ebba9518d960755d287a86035.tar.gz",
+        "url": "https://github.com/NixOS/nixpkgs/archive/cc90ececa78a269bcf185e62e160a0eed4d45a14.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "xlm-roberta-base-sentencepiece": {
