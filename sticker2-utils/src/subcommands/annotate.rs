@@ -118,7 +118,7 @@ impl StickerApp for AnnotateApp {
                 Arg::with_name(READ_AHEAD)
                     .help("Readahead (number of batches)")
                     .long("readahead")
-                    .default_value("10"),
+                    .default_value("100"),
             )
     }
 
