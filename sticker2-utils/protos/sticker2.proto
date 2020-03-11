@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+// Request for annotations.
+message AnnotateSentenceRequest {
+  repeated string tokens = 1;
+}
+
+// A response consists of either an error or an annotated sentence.
+message AnnotateSentenceResponse {
+  oneof result {
+    string error = 1;
+    AnnotationMetadata annotation_metadata = 2;
+    AnnotatedSentence annotated_sentence = 3;
+  };
+}
+
+// Metadata that will be communicated before the first response.
+message AnnotationMetadata {
+  // Layers that are annotated.
+  message Layers {
+    reserved 1, 2, 9, 10;
+
+    bool lemma = 3;
+    bool cpos = 4;
+    bool pos = 5;
+    repeated string features = 6;
+    bool head = 7;
+    bool deprel = 8;
+  }
+
+  Layers layers = 1;
+}
+
+// An annotated sentence.
+message AnnotatedSentence {
+  // Stick as closely to the CoNLL-X fields as possible.
+  message Token {
+    // Reserve ID and projective deprel fields.
+    reserved 1, 9, 10;
+
+    string form = 2;
+    string lemma = 3;
+    string cpos = 4;
+    string pos = 5;
+    map<string, string> features = 6;
+    int32 head = 7;
+    string deprel = 8;
+  }
+
+  repeated Token tokens = 1;
+}

@@ -43,15 +43,15 @@
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "nixpkgs": {
-        "branch": "master",
+        "branch": "build-script-link-fix",
         "description": "Nix Packages collection",
         "homepage": null,
-        "owner": "NixOS",
+        "owner": "danieldk",
         "repo": "nixpkgs",
-        "rev": "cc90ececa78a269bcf185e62e160a0eed4d45a14",
-        "sha256": "0rnavvhnj2ihajrlfb3pl3fn2yj73j8b4d5r4wpakqz5q53xzvmg",
+        "rev": "a4c8c69d00419b6b42f7743640ec48a70e5d2e1d",
+        "sha256": "0dhsyd9y1dgvhjni0mlc6nj6jg8wd3v93n967bhii9iacb4cnfg9",
         "type": "tarball",
-        "url": "https://github.com/NixOS/nixpkgs/archive/cc90ececa78a269bcf185e62e160a0eed4d45a14.tar.gz",
+        "url": "https://github.com/danieldk/nixpkgs/archive/a4c8c69d00419b6b42f7743640ec48a70e5d2e1d.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "xlm-roberta-base-sentencepiece": {

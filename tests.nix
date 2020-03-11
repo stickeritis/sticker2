@@ -14,6 +14,10 @@ let
 
     sticker2 = attr: models;
 
+    sticker2-utils = attr: {
+      nativeBuildInputs = [ protobuf ];
+    };
+
     sentencepiece-sys = attr: {
       nativeBuildInputs = [ pkgconfig ];
 

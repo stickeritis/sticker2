@@ -16,6 +16,7 @@ in with nixpkgs; mkShell (models // {
   nativeBuildInputs = [
     mozilla.latest.rustChannels.stable.rust
     pkgconfig
+    protobuf
   ];
 
   buildInputs = [

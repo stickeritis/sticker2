@@ -2565,6 +2565,68 @@ rec {
           "with-serde" = [ "serde" "serde_derive" ];
         };
       };
+      "protobuf-codegen 2.10.1 (registry+https://github.com/rust-lang/crates.io-index)" = rec {
+        crateName = "protobuf-codegen";
+        version = "2.10.1";
+        edition = "2015";
+        # Hack to suppress building binaries
+        crateBin = [ { name = ","; path = ","; } ];
+        sha256 = "08wdpm6ys9kpwv7q1r2j6pnqv11m7q67dkb8b2875z7pxhg44mk4";
+        authors = [
+          "Stepan Koltsov <stepan.koltsov@gmail.com>"
+        ];
+        dependencies = [
+          {
+            name = "protobuf";
+            packageId = "protobuf 2.10.1 (registry+https://github.com/rust-lang/crates.io-index)";
+          }
+        ];
+        
+      };
+      "protoc 2.10.1 (registry+https://github.com/rust-lang/crates.io-index)" = rec {
+        crateName = "protoc";
+        version = "2.10.1";
+        edition = "2015";
+        sha256 = "125ba01xi0alj4q6kgjm3j3z8zpcnf0p4q0nc2yciqm98wjkvn4z";
+        authors = [
+          "Stepan Koltsov <stepan.koltsov@gmail.com>"
+        ];
+        dependencies = [
+          {
+            name = "log";
+            packageId = "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)";
+          }
+        ];
+        
+      };
+      "protoc-rust 2.10.1 (registry+https://github.com/rust-lang/crates.io-index)" = rec {
+        crateName = "protoc-rust";
+        version = "2.10.1";
+        edition = "2015";
+        sha256 = "1n174x0xibvighfjcqf160fzvpm8kcb5sbq6s7sw4x1l6smh7zih";
+        authors = [
+          "Stepan Koltsov <stepan.koltsov@gmail.com>"
+        ];
+        dependencies = [
+          {
+            name = "protobuf";
+            packageId = "protobuf 2.10.1 (registry+https://github.com/rust-lang/crates.io-index)";
+          }
+          {
+            name = "protobuf-codegen";
+            packageId = "protobuf-codegen 2.10.1 (registry+https://github.com/rust-lang/crates.io-index)";
+          }
+          {
+            name = "protoc";
+            packageId = "protoc 2.10.1 (registry+https://github.com/rust-lang/crates.io-index)";
+          }
+          {
+            name = "tempfile";
+            packageId = "tempfile 3.1.0 (registry+https://github.com/rust-lang/crates.io-index)";
+          }
+        ];
+        
+      };
       "quote 0.6.13 (registry+https://github.com/rust-lang/crates.io-index)" = rec {
         crateName = "quote";
         version = "0.6.13";
@@ -3275,6 +3337,24 @@ rec {
         };
         resolvedDefaultFeatures = [ "unicode-age" "unicode-bool" "unicode-case" "unicode-gencat" "unicode-perl" "unicode-script" "unicode-segment" ];
       };
+      "remove_dir_all 0.5.2 (registry+https://github.com/rust-lang/crates.io-index)" = rec {
+        crateName = "remove_dir_all";
+        version = "0.5.2";
+        edition = "2015";
+        sha256 = "0bkrlyg26mgizpiy1yb2hhpgscxcag8r5fnckqsvk25608vzm0sa";
+        authors = [
+          "Aaronepower <theaaronepower@gmail.com>"
+        ];
+        dependencies = [
+          {
+            name = "winapi";
+            packageId = "winapi 0.3.8 (registry+https://github.com/rust-lang/crates.io-index)";
+            target = { target, features }: target."windows";
+            features = [ "std" "errhandlingapi" "winerror" "fileapi" "winbase" ];
+          }
+        ];
+        
+      };
       "rustc-demangle 0.1.16 (registry+https://github.com/rust-lang/crates.io-index)" = rec {
         crateName = "rustc-demangle";
         version = "0.1.16";
@@ -3905,6 +3985,12 @@ rec {
             packageId = "threadpool 1.7.1 (registry+https://github.com/rust-lang/crates.io-index)";
           }
         ];
+        buildDependencies = [
+          {
+            name = "protoc-rust";
+            packageId = "protoc-rust 2.10.1 (registry+https://github.com/rust-lang/crates.io-index)";
+          }
+        ];
         features = {
           "default" = [ "load-hdf5" ];
           "load-hdf5" = [ "sticker-transformers/load-hdf5" "sticker2/load-hdf5" ];
@@ -4067,6 +4153,49 @@ rec {
           "doc-only" = [ "torch-sys/doc-only" ];
           "python" = [ "cpython" ];
         };
+      };
+      "tempfile 3.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = rec {
+        crateName = "tempfile";
+        version = "3.1.0";
+        edition = "2018";
+        sha256 = "1a9cfdqw70n7bcnkx05aih9xdba8lqazmqlkjpkmn2la6gcj8vks";
+        authors = [
+          "Steven Allen <steven@stebalien.com>"
+          "The Rust Project Developers"
+          "Ashley Mannix <ashleymannix@live.com.au>"
+          "Jason White <jasonaw0@gmail.com>"
+        ];
+        dependencies = [
+          {
+            name = "cfg-if";
+            packageId = "cfg-if 0.1.10 (registry+https://github.com/rust-lang/crates.io-index)";
+          }
+          {
+            name = "libc";
+            packageId = "libc 0.2.66 (registry+https://github.com/rust-lang/crates.io-index)";
+            target = { target, features }: target."unix";
+          }
+          {
+            name = "rand";
+            packageId = "rand 0.7.3 (registry+https://github.com/rust-lang/crates.io-index)";
+          }
+          {
+            name = "redox_syscall";
+            packageId = "redox_syscall 0.1.56 (registry+https://github.com/rust-lang/crates.io-index)";
+            target = { target, features }: (target."os" == "redox");
+          }
+          {
+            name = "remove_dir_all";
+            packageId = "remove_dir_all 0.5.2 (registry+https://github.com/rust-lang/crates.io-index)";
+          }
+          {
+            name = "winapi";
+            packageId = "winapi 0.3.8 (registry+https://github.com/rust-lang/crates.io-index)";
+            target = { target, features }: target."windows";
+            features = [ "fileapi" "handleapi" "winbase" ];
+          }
+        ];
+        
       };
       "termios 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)" = rec {
         crateName = "termios";
