@@ -32,7 +32,9 @@ let
 
     defaultCrateOverrides = crateOverrides;
   };
-  cargo_nix = pkgs.callPackage ./nix/Cargo.nix { inherit buildRustCrate; };
+  cargo_nix = pkgs.callPackage ./nix/Cargo.nix {
+    inherit buildRustCrate pkgs stdenv;
+  };
 in with pkgs; lib.flatten (lib.mapAttrsToList (_: drv: [
   (drv.build.override {
     features = [ "model-tests" ];
