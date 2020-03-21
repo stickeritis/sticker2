@@ -6,7 +6,7 @@ use failure::Fallible;
 use indicatif::ProgressStyle;
 use ordered_float::NotNan;
 use stdinout::OrExit;
-use sticker2::dataset::{ConllxDataSet, DataSet, SequenceLength};
+use sticker2::dataset::{ConlluDataSet, DataSet, SequenceLength};
 use sticker2::encoders::Encoders;
 use sticker2::input::Tokenize;
 use sticker2::lr::{ExponentialDecay, LearningRateSchedule, PlateauLearningRate};
@@ -122,7 +122,7 @@ impl FinetuneApp {
             epoch_type
         )));
 
-        let mut dataset = ConllxDataSet::new(read_progress);
+        let mut dataset = ConlluDataSet::new(read_progress);
 
         let mut encoder_accuracy = BTreeMap::new();
         let mut encoder_loss = BTreeMap::new();

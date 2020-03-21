@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::io::{BufReader, Read, Seek, SeekFrom};
 
-use conllx::io::{ReadSentence, Reader};
+use conllu::io::{ReadSentence, Reader};
 use failure::Fallible;
 use ndarray::Array1;
 use rand::SeedableRng;
@@ -41,12 +41,12 @@ pub trait DataSet<'a> {
 }
 
 /// A CoNLL-X data set.
-pub struct ConllxDataSet<R>(R);
+pub struct ConlluDataSet<R>(R);
 
-impl<R> ConllxDataSet<R> {
+impl<R> ConlluDataSet<R> {
     /// Construct a CoNLL-X dataset.
     pub fn new(read: R) -> Self {
-        ConllxDataSet(read)
+        ConlluDataSet(read)
     }
 
     /// Returns an `Iterator` over `Result<Sentence, Error>`.
@@ -82,11 +82,11 @@ impl<R> ConllxDataSet<R> {
     }
 }
 
-impl<'ds, 'a: 'ds, R> DataSet<'a> for &'ds mut ConllxDataSet<R>
+impl<'ds, 'a: 'ds, R> DataSet<'a> for &'ds mut ConlluDataSet<R>
 where
     R: Read + Seek,
 {
-    type Iter = ConllxIter<'a, Box<dyn Iterator<Item = Fallible<SentenceWithPieces>> + 'ds>>;
+    type Iter = ConlluIter<'a, Box<dyn Iterator<Item = Fallible<SentenceWithPieces>> + 'ds>>;
 
     fn batches(
         self,
@@ -102,11 +102,11 @@ where
 
         let reader = Reader::new(BufReader::new(&mut self.0));
 
-        Ok(ConllxIter {
+        Ok(ConlluIter {
             batch_size,
             encoders,
             labels,
-            sentences: ConllxDataSet::get_sentence_iter(
+            sentences: ConlluDataSet::get_sentence_iter(
                 reader,
                 tokenizer,
                 max_len,
@@ -116,7 +116,7 @@ where
     }
 }
 
-pub struct ConllxIter<'a, I>
+pub struct ConlluIter<'a, I>
 where
     I: Iterator<Item = Fallible<SentenceWithPieces>>,
 {
@@ -126,7 +126,7 @@ where
     sentences: I,
 }
 
-impl<'a, I> ConllxIter<'a, I>
+impl<'a, I> ConlluIter<'a, I>
 where
     I: Iterator<Item = Fallible<SentenceWithPieces>>,
 {
@@ -194,7 +194,7 @@ where
     }
 }
 
-impl<'a, I> Iterator for ConllxIter<'a, I>
+impl<'a, I> Iterator for ConlluIter<'a, I>
 where
     I: Iterator<Item = Fallible<SentenceWithPieces>>,
 {

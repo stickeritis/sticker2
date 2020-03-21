@@ -1,6 +1,7 @@
 use std::ops::Deref;
 
 use serde::{Deserialize, Serialize};
+use sticker_encoders::deprel::POSLayer;
 use sticker_encoders::layer::Layer;
 use sticker_encoders::lemma::BackoffStrategy;
 
@@ -45,7 +46,7 @@ pub enum DependencyEncoder {
     RelativePosition,
 
     /// Encode a token's head by relative position of the POS tag.
-    RelativePOS,
+    RelativePOS(POSLayer),
 }
 
 /// Configuration of an encoder with a name.

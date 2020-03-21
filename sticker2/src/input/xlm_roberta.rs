@@ -1,4 +1,4 @@
-use conllx::graph::{Node, Sentence};
+use conllu::graph::{Node, Sentence};
 use sentencepiece::SentencePieceProcessor;
 
 use crate::input::{SentenceWithPieces, Tokenize};
@@ -80,8 +80,8 @@ impl Tokenize for XlmRobertaTokenizer {
 mod tests {
     use std::iter::FromIterator;
 
-    use conllx::graph::Sentence;
-    use conllx::token::Token;
+    use conllu::graph::Sentence;
+    use conllu::token::Token;
     use ndarray::array;
     use sentencepiece::SentencePieceProcessor;
 

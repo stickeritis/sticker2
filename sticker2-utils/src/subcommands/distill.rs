@@ -10,7 +10,7 @@ use itertools::Itertools;
 use ordered_float::NotNan;
 use stdinout::OrExit;
 use sticker2::config::Config;
-use sticker2::dataset::{ConllxDataSet, DataSet, SequenceLength};
+use sticker2::dataset::{ConlluDataSet, DataSet, SequenceLength};
 use sticker2::encoders::Encoders;
 use sticker2::input::Tokenize;
 use sticker2::lr::{ExponentialDecay, LearningRateSchedule};
@@ -24,7 +24,7 @@ use tch::{self, Device, Kind, Reduction, Tensor};
 use crate::io::{load_config, load_pretrain_config, load_tokenizer, Model};
 use crate::progress::ReadProgress;
 use crate::traits::{StickerApp, DEFAULT_CLAP_SETTINGS};
-use crate::util::count_conllx_sentences;
+use crate::util::count_conllu_sentences;
 
 const BATCH_SIZE: &str = "BATCH_SIZE";
 const EPOCHS: &str = "EPOCHS";
@@ -309,12 +309,12 @@ impl DistillApp {
         Ok(())
     }
 
-    fn open_dataset(file: &File) -> ConllxDataSet<impl Read + Seek> {
+    fn open_dataset(file: &File) -> ConlluDataSet<impl Read + Seek> {
         let read = BufReader::new(
             file.try_clone()
                 .or_exit("Cannot open data set for reading", 1),
         );
-        ConllxDataSet::new(read)
+        ConlluDataSet::new(read)
     }
 
     fn fresh_student(&self, student_config: &Config, teacher: &Model) -> StudentModel {
@@ -378,7 +378,7 @@ impl DistillApp {
             "[Time: {elapsed_precise}, ETA: {eta_precise}] {bar} {percent}% validation {msg}",
         ));
 
-        let mut dataset = ConllxDataSet::new(read_progress);
+        let mut dataset = ConlluDataSet::new(read_progress);
 
         let mut encoder_accuracy = BTreeMap::new();
         let mut encoder_loss = BTreeMap::new();
@@ -746,7 +746,7 @@ impl TrainDuration {
                         "[Time: {elapsed_precise}, ETA: {eta_precise}] {bar} {percent}%",
                     ));
 
-                let n_sentences = count_conllx_sentences(BufReader::new(read_progress))?;
+                let n_sentences = count_conllu_sentences(BufReader::new(read_progress))?;
 
                 progress_bar.finish_and_clear();
 

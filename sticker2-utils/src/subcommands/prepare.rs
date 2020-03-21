@@ -2,7 +2,7 @@ use std::fs::File;
 use std::io::Write;
 
 use clap::{App, Arg, ArgMatches};
-use conllx::io::{ReadSentence, Reader};
+use conllu::io::{ReadSentence, Reader};
 use serde_yaml;
 use stdinout::{Input, OrExit};
 use sticker2::config::Config;

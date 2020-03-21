@@ -1,7 +1,7 @@
 use std::hash::Hash;
 use std::ops::Deref;
 
-use conllx::graph::Sentence;
+use conllu::graph::Sentence;
 use edit_tree::EditTree;
 use failure::Fallible;
 use numberer::Numberer;
@@ -137,11 +137,11 @@ impl From<&EncoderType> for Encoder {
         // We start labeling at 2. 0 is reserved for padding, 1 for continuations.
         match encoder_type {
             EncoderType::Dependency {
-                encoder: DependencyEncoder::RelativePOS,
+                encoder: DependencyEncoder::RelativePOS(pos_layer),
                 root_relation,
             } => Encoder::RelativePOS(
                 MutableCategoricalEncoder::new(
-                    RelativePOSEncoder::new(root_relation),
+                    RelativePOSEncoder::new(*pos_layer, root_relation),
                     Numberer::new(2),
                 )
                 .into(),

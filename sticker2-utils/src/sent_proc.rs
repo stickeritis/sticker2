@@ -1,5 +1,5 @@
-use conllx::graph::Sentence;
-use conllx::io::WriteSentence;
+use conllu::graph::Sentence;
+use conllu::io::WriteSentence;
 use failure::Fallible;
 
 use sticker2::input::{SentenceWithPieces, Tokenize};
