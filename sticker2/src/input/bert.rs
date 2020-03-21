@@ -1,4 +1,4 @@
-use conllx::graph::{Node, Sentence};
+use conllu::graph::{Node, Sentence};
 use wordpieces::WordPieces;
 
 use crate::input::{SentenceWithPieces, Tokenize};
@@ -75,8 +75,8 @@ mod tests {
     use std::io::{BufRead, BufReader};
     use std::iter::FromIterator;
 
-    use conllx::graph::Sentence;
-    use conllx::token::Token;
+    use conllu::graph::Sentence;
+    use conllu::token::Token;
     use ndarray::array;
     use wordpieces::WordPieces;
 

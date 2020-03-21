@@ -4,7 +4,7 @@ use std::ops::Deref;
 use std::sync::Arc;
 
 use clap::{App, Arg, ArgMatches};
-use conllx::io::{ReadSentence, Reader, Writer};
+use conllu::io::{ReadSentence, Reader, Writer};
 use stdinout::OrExit;
 use sticker2::input::Tokenize;
 use sticker2::tagger::Tagger;
@@ -211,7 +211,7 @@ fn handle_client(
         .unwrap_or_else(|_| "<unknown>".to_string());
     eprintln!("Accepted connection from {}", peer_addr);
 
-    let conllx_stream = match stream.try_clone() {
+    let conllu_stream = match stream.try_clone() {
         Ok(stream) => stream,
         Err(err) => {
             eprintln!("Cannot clone stream: {}", err);
@@ -219,8 +219,8 @@ fn handle_client(
         }
     };
 
-    let reader = Reader::new(BufReader::new(&conllx_stream));
-    let writer = Writer::new(BufWriter::new(&conllx_stream));
+    let reader = Reader::new(BufReader::new(&conllu_stream));
+    let writer = Writer::new(BufWriter::new(&conllu_stream));
 
     let mut speed = TaggerSpeed::new();
 

@@ -1,7 +1,7 @@
 use std::io::BufWriter;
 
 use clap::{App, Arg, ArgMatches};
-use conllx::io::{ReadSentence, Reader, WriteSentence, Writer};
+use conllu::io::{ReadSentence, Reader, WriteSentence, Writer};
 use stdinout::{Input, OrExit, Output};
 use sticker2::input::Tokenize;
 use sticker2::tagger::Tagger;

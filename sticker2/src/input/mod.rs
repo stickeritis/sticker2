@@ -1,4 +1,4 @@
-use conllx::graph::Sentence;
+use conllu::graph::Sentence;
 use ndarray::Array1;
 
 mod bert;

@@ -2,7 +2,7 @@ use std::io::BufRead;
 
 use failure::Fallible;
 
-pub fn count_conllx_sentences(buf_read: impl BufRead) -> Fallible<usize> {
+pub fn count_conllu_sentences(buf_read: impl BufRead) -> Fallible<usize> {
     let mut n_sents = 0;
 
     for line in buf_read.lines() {

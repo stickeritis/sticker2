@@ -26,9 +26,9 @@ rec {
   # workspaceMembers."${crateName}".build.override { features = [ "default" "feature1" ... ]; }.
   workspaceMembers = {
     "sticker2" = rec {
-      packageId = "sticker2 0.2.0 (path+file:///home/daniel/git/sticker2/sticker2)";
+      packageId = "sticker2 0.2.0 (path+file:///Users/daniel/git/sticker2/sticker2)";
       build = internal.buildRustCrateWithFeatures {
-        packageId = "sticker2 0.2.0 (path+file:///home/daniel/git/sticker2/sticker2)";
+        packageId = "sticker2 0.2.0 (path+file:///Users/daniel/git/sticker2/sticker2)";
       };
 
       # Debug support which might change between releases.
@@ -36,9 +36,9 @@ rec {
       debug = internal.debugCrate { inherit packageId; };
     };
     "sticker2-utils" = rec {
-      packageId = "sticker2-utils 0.2.0 (path+file:///home/daniel/git/sticker2/sticker2-utils)";
+      packageId = "sticker2-utils 0.2.0 (path+file:///Users/daniel/git/sticker2/sticker2-utils)";
       build = internal.buildRustCrateWithFeatures {
-        packageId = "sticker2-utils 0.2.0 (path+file:///home/daniel/git/sticker2/sticker2-utils)";
+        packageId = "sticker2-utils 0.2.0 (path+file:///Users/daniel/git/sticker2/sticker2-utils)";
       };
 
       # Debug support which might change between releases.
@@ -600,11 +600,11 @@ rec {
         ];
         
       };
-      "conllx 0.12.1 (registry+https://github.com/rust-lang/crates.io-index)" = rec {
-        crateName = "conllx";
-        version = "0.12.1";
+      "conllu 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)" = rec {
+        crateName = "conllu";
+        version = "0.3.0";
         edition = "2018";
-        sha256 = "152az96alwvqfdimf06w0dawgs8g784q4ywidf319cp15ijcb3n3";
+        sha256 = "1fb48n74qqj9p48igfxqv2xn9x5icn199b4fjj9c4v5mn3amvvlx";
         authors = [
           "Daniël de Kok <me@danieldk.eu>"
         ];
@@ -3655,18 +3655,22 @@ rec {
         ];
         
       };
-      "sticker-encoders 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = rec {
+      "sticker-encoders 0.2.0 (git+https://github.com/stickeritis/sticker-encoders.git#bdff9297ed6a0989eead5337933a872b80aec3bf)" = rec {
         crateName = "sticker-encoders";
         version = "0.2.0";
         edition = "2018";
-        sha256 = "19v1lp9ah7vhxd87bh0ld7iqx1jda1bdjg2cvyvg6ckj64b7ippp";
+        src = pkgs.fetchgit {
+          url = "https://github.com/stickeritis/sticker-encoders.git";
+          rev = "bdff9297ed6a0989eead5337933a872b80aec3bf";
+          sha256 = "1qmzdc1nfgvdsc7dd3ahfb10d6hhwydgrcww857cv1snw8h5x4fn";
+        };
         authors = [
           "Daniël de Kok <me@danieldk.eu>"
         ];
         dependencies = [
           {
-            name = "conllx";
-            packageId = "conllx 0.12.1 (registry+https://github.com/rust-lang/crates.io-index)";
+            name = "conllu";
+            packageId = "conllu 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)";
           }
           {
             name = "edit_tree";
@@ -3733,7 +3737,7 @@ rec {
         };
         resolvedDefaultFeatures = [ "hdf5" "load-hdf5" ];
       };
-      "sticker2 0.2.0 (path+file:///home/daniel/git/sticker2/sticker2)" = rec {
+      "sticker2 0.2.0 (path+file:///Users/daniel/git/sticker2/sticker2)" = rec {
         crateName = "sticker2";
         version = "0.2.0";
         edition = "2018";
@@ -3743,8 +3747,8 @@ rec {
         ];
         dependencies = [
           {
-            name = "conllx";
-            packageId = "conllx 0.12.1 (registry+https://github.com/rust-lang/crates.io-index)";
+            name = "conllu";
+            packageId = "conllu 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)";
           }
           {
             name = "edit_tree";
@@ -3793,7 +3797,7 @@ rec {
           }
           {
             name = "sticker-encoders";
-            packageId = "sticker-encoders 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)";
+            packageId = "sticker-encoders 0.2.0 (git+https://github.com/stickeritis/sticker-encoders.git#bdff9297ed6a0989eead5337933a872b80aec3bf)";
           }
           {
             name = "sticker-transformers";
@@ -3837,7 +3841,7 @@ rec {
         };
         resolvedDefaultFeatures = [ "default" "load-hdf5" "model-tests" ];
       };
-      "sticker2-utils 0.2.0 (path+file:///home/daniel/git/sticker2/sticker2-utils)" = rec {
+      "sticker2-utils 0.2.0 (path+file:///Users/daniel/git/sticker2/sticker2-utils)" = rec {
         crateName = "sticker2-utils";
         version = "0.2.0";
         edition = "2018";
@@ -3854,8 +3858,8 @@ rec {
             packageId = "clap 2.33.0 (registry+https://github.com/rust-lang/crates.io-index)";
           }
           {
-            name = "conllx";
-            packageId = "conllx 0.12.1 (registry+https://github.com/rust-lang/crates.io-index)";
+            name = "conllu";
+            packageId = "conllu 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)";
           }
           {
             name = "failure";
@@ -3884,7 +3888,7 @@ rec {
           }
           {
             name = "sticker-encoders";
-            packageId = "sticker-encoders 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)";
+            packageId = "sticker-encoders 0.2.0 (git+https://github.com/stickeritis/sticker-encoders.git#bdff9297ed6a0989eead5337933a872b80aec3bf)";
           }
           {
             name = "sticker-transformers";
@@ -3893,7 +3897,7 @@ rec {
           }
           {
             name = "sticker2";
-            packageId = "sticker2 0.2.0 (path+file:///home/daniel/git/sticker2/sticker2)";
+            packageId = "sticker2 0.2.0 (path+file:///Users/daniel/git/sticker2/sticker2)";
             usesDefaultFeatures = false;
           }
           {

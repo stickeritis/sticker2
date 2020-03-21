@@ -183,6 +183,7 @@ fn relativize_path(config_path: &Path, filename: &str) -> Fallible<String> {
 
 #[cfg(test)]
 mod tests {
+    use sticker_encoders::deprel::POSLayer;
     use sticker_encoders::layer::Layer;
     use sticker_encoders::lemma::BackoffStrategy;
 
@@ -208,7 +209,7 @@ mod tests {
                         NamedEncoderConfig {
                             name: "dep".to_string(),
                             encoder: EncoderType::Dependency {
-                                encoder: DependencyEncoder::RelativePOS,
+                                encoder: DependencyEncoder::RelativePOS(POSLayer::XPos),
                                 root_relation: "root".to_string()
                             }
                         },
@@ -218,7 +219,7 @@ mod tests {
                         },
                         NamedEncoderConfig {
                             name: "pos".to_string(),
-                            encoder: EncoderType::Sequence(Layer::Pos)
+                            encoder: EncoderType::Sequence(Layer::XPos)
                         },
                     ]),
                 },
