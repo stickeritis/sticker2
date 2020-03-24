@@ -4,6 +4,7 @@ let
   sources = import ./nix/sources.nix;
   models = import ./nix/models.nix;
   danieldk = pkgs.callPackage sources.danieldk {};
+  libtorch = danieldk.libtorch.v1_4_0;
   # PyTorch 1.4.0 headers are not compatible with gcc 9. Remove with
   # the next PyTorch release.
   stdenv = if pkgs.stdenv.cc.isGNU then pkgs.gcc8Stdenv else pkgs.stdenv;
@@ -12,7 +13,15 @@ let
       HDF5_DIR = symlinkJoin { name = "hdf5-join"; paths = [ hdf5.dev hdf5.out ]; };
     };
 
-    sticker2 = attr: models;
+    sticker2 = attr: {
+      buildInputs = [ libtorch ] ++
+        lib.optional stdenv.isDarwin darwin.Security;
+    } // models;
+
+    sticker2-utils = attr: {
+      buildInputs = [ libtorch ] ++
+        lib.optional stdenv.isDarwin darwin.Security;
+    };
 
     sentencepiece-sys = attr: {
       nativeBuildInputs = [ pkgconfig ];
@@ -24,7 +33,9 @@ let
       # Remove when we are not using a git version of tch anymore.
       src = "${attr.src}/torch-sys";
 
-      LIBTORCH = "${danieldk.libtorch.v1_4_0}";
+      buildInputs = lib.optional stdenv.isDarwin curl;
+
+      LIBTORCH = "${libtorch.dev}";
     };
   };
   buildRustCrate = pkgs.buildRustCrate.override {
