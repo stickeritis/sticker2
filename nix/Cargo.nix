@@ -2204,11 +2204,11 @@ rec {
         };
         resolvedDefaultFeatures = [ "default" "std" ];
       };
-      "numberer 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)" = rec {
+      "numberer 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = rec {
         crateName = "numberer";
-        version = "0.1.1";
+        version = "0.2.0";
         edition = "2018";
-        sha256 = "1bzkrd2ni8shpra1v1zhci4whzb035rzai0zxnx52l095ayvid28";
+        sha256 = "0a96wj1fdp72ghsa46x3l3i5p3kdv0pa76k7jms0djnq45p43qy8";
         authors = [
           "Daniël de Kok <me@danieldk.eu>"
         ];
@@ -3655,15 +3655,11 @@ rec {
         ];
         
       };
-      "sticker-encoders 0.2.0 (git+https://github.com/stickeritis/sticker-encoders.git#bdff9297ed6a0989eead5337933a872b80aec3bf)" = rec {
+      "sticker-encoders 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)" = rec {
         crateName = "sticker-encoders";
-        version = "0.2.0";
+        version = "0.3.1";
         edition = "2018";
-        src = pkgs.fetchgit {
-          url = "https://github.com/stickeritis/sticker-encoders.git";
-          rev = "bdff9297ed6a0989eead5337933a872b80aec3bf";
-          sha256 = "1qmzdc1nfgvdsc7dd3ahfb10d6hhwydgrcww857cv1snw8h5x4fn";
-        };
+        sha256 = "14fqccnhqlxi55r35zm91r23849j8ks3wpbw0syrf46wfal40bjh";
         authors = [
           "Daniël de Kok <me@danieldk.eu>"
         ];
@@ -3682,7 +3678,7 @@ rec {
           }
           {
             name = "numberer";
-            packageId = "numberer 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)";
+            packageId = "numberer 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)";
           }
           {
             name = "ordered-float";
@@ -3768,7 +3764,7 @@ rec {
           }
           {
             name = "numberer";
-            packageId = "numberer 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)";
+            packageId = "numberer 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)";
           }
           {
             name = "ordered-float";
@@ -3797,7 +3793,7 @@ rec {
           }
           {
             name = "sticker-encoders";
-            packageId = "sticker-encoders 0.2.0 (git+https://github.com/stickeritis/sticker-encoders.git#bdff9297ed6a0989eead5337933a872b80aec3bf)";
+            packageId = "sticker-encoders 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)";
           }
           {
             name = "sticker-transformers";
@@ -3888,7 +3884,7 @@ rec {
           }
           {
             name = "sticker-encoders";
-            packageId = "sticker-encoders 0.2.0 (git+https://github.com/stickeritis/sticker-encoders.git#bdff9297ed6a0989eead5337933a872b80aec3bf)";
+            packageId = "sticker-encoders 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)";
           }
           {
             name = "sticker-transformers";
