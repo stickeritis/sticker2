@@ -1266,7 +1266,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "sticker-encoders"
-version = "0.3.1"
+version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "conllu 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1310,7 +1310,7 @@ dependencies = [
  "sentencepiece 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_json 1.0.48 (registry+https://github.com/rust-lang/crates.io-index)",
- "sticker-encoders 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sticker-encoders 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "sticker-transformers 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "tch 0.1.6 (git+https://github.com/LaurentMazare/tch-rs.git?rev=c631fc4b8bb2)",
  "toml 0.5.6 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1329,7 +1329,7 @@ dependencies = [
  "ordered-float 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_yaml 0.8.11 (registry+https://github.com/rust-lang/crates.io-index)",
  "stdinout 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "sticker-encoders 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sticker-encoders 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "sticker-transformers 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "sticker2 0.2.0",
  "tch 0.1.6 (git+https://github.com/LaurentMazare/tch-rs.git?rev=c631fc4b8bb2)",
@@ -1807,7 +1807,7 @@ dependencies = [
 "checksum socket2 0.3.11 (registry+https://github.com/rust-lang/crates.io-index)" = "e8b74de517221a2cb01a53349cf54182acdc31a074727d3079068448c0676d85"
 "checksum sourcefile 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)" = "4bf77cb82ba8453b42b6ae1d692e4cdc92f9a47beaf89a847c8be83f4e328ad3"
 "checksum stdinout 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)" = "29f1026ef7b2ded56453d708809e15f148b7f5b6a51e1ee0237964881ab85680"
-"checksum sticker-encoders 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)" = "502e40a872dc1097bd067c5d3ef444321134440ea9fe327229b1530c2d63d891"
+"checksum sticker-encoders 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)" = "3fbb36c9722a42bdc1a6db151f7299c80fd2fe49f88d47ffc0ec8f4a4bd473b9"
 "checksum sticker-transformers 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)" = "457e0a7aa6f460d16239ff882307c475126b4fab1ae9f22efbebb37e1bf44006"
 "checksum strsim 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)" = "8ea5119cdb4c55b55d432abb513a0429384878c15dde60cc77b1c99de1a95a6a"
 "checksum syn 0.15.44 (registry+https://github.com/rust-lang/crates.io-index)" = "9ca4b3b69a77cbe1ffc9e198781b7acb0c7365a883670e8f1c1bc66fba79a5c5"
