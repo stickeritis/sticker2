@@ -2952,11 +2952,11 @@ rec {
         ];
         
       };
-      "sticker-encoders 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = rec {
+      "sticker-encoders 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)" = rec {
         crateName = "sticker-encoders";
-        version = "0.2.0";
+        version = "0.2.1";
         edition = "2018";
-        sha256 = "19v1lp9ah7vhxd87bh0ld7iqx1jda1bdjg2cvyvg6ckj64b7ippp";
+        sha256 = "0mxyb2sdy0agrksrh0avdrhscpzkw9cdkb2hlxn184v83a36lf1y";
         authors = [
           "Daniël de Kok <me@danieldk.eu>"
         ];
@@ -3086,7 +3086,7 @@ rec {
           }
           {
             name = "sticker-encoders";
-            packageId = "sticker-encoders 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)";
+            packageId = "sticker-encoders 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)";
           }
           {
             name = "sticker-transformers";
@@ -3169,7 +3169,7 @@ rec {
           }
           {
             name = "sticker-encoders";
-            packageId = "sticker-encoders 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)";
+            packageId = "sticker-encoders 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)";
           }
           {
             name = "sticker-transformers";
