@@ -1,6 +1,6 @@
 [package]
 name = "sticker2-utils"
-version = "0.2.3"
+version = "0.2.4"
 authors = ["Daniël de Kok <me@danieldk.eu>"]
 edition = "2018"
 

@@ -1042,7 +1042,7 @@ dependencies = [
 
 [[package]]
 name = "sticker2"
-version = "0.2.3"
+version = "0.2.4"
 dependencies = [
  "approx 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "conllx 0.12.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1066,7 +1066,7 @@ dependencies = [
 
 [[package]]
 name = "sticker2-utils"
-version = "0.2.3"
+version = "0.2.4"
 dependencies = [
  "clap 2.33.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "conllx 0.12.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1078,7 +1078,7 @@ dependencies = [
  "stdinout 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "sticker-encoders 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "sticker-transformers 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "sticker2 0.2.3",
+ "sticker2 0.2.4",
  "tch 0.1.6 (git+https://github.com/LaurentMazare/tch-rs.git?rev=39851f24)",
  "threadpool 1.7.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
