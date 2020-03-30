@@ -169,6 +169,7 @@ impl DistillApp {
         Ok(())
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn train_steps(
         &self,
         progress: &ProgressBar,

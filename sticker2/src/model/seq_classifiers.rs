@@ -61,6 +61,7 @@ impl SequenceClassifiers {
             .collect()
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn loss(
         &self,
         layers: &[impl LayerOutput],
