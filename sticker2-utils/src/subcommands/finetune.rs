@@ -172,7 +172,7 @@ impl FinetuneApp {
                 FreezeLayers {
                     embeddings: !self.finetune_embeds || freeze_encoder,
                     encoder: freeze_encoder,
-                    classifiers: !optimizer.is_some(),
+                    classifiers: optimizer.is_none(),
                 },
                 self.include_continuations,
             );

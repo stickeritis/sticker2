@@ -66,9 +66,10 @@ impl StickerApp for PrepareApp {
         let train_file = File::open(&self.train_data).or_exit("Cannot open train data file", 1);
         let read_progress = ReadProgress::new(train_file).or_exit("Cannot create progress bar", 1);
         let progress_bar = read_progress.progress_bar().clone();
-        progress_bar.set_style(ProgressStyle::default_bar().template(&format!(
-            "[Time: {{elapsed_precise}}, ETA: {{eta_precise}}] {{bar}} {{percent}}% {{msg}}",
-        )));
+        progress_bar.set_style(
+            ProgressStyle::default_bar()
+                .template("[Time: {elapsed_precise}, ETA: {eta_precise}] {bar} {percent}% {msg}"),
+        );
 
         let treebank_reader = Reader::new(BufReader::new(read_progress));
 
