@@ -1,0 +1,91 @@
+use std::io::BufWriter;
+
+use clap::{App, Arg, ArgMatches};
+use conllu::io::{ReadSentence, Reader, WriteSentence, Writer};
+use stdinout::{Input, OrExit, Output};
+
+use crate::io::{load_config, load_tokenizer};
+use crate::traits::{StickerApp, DEFAULT_CLAP_SETTINGS};
+
+const CONFIG: &str = "CONFIG";
+const MAX_LEN: &str = "MAX_LEN";
+const INPUT: &str = "INPUT";
+const OUTPUT: &str = "OUTPUT";
+
+pub struct FilterLenApp {
+    config: String,
+    input: Option<String>,
+    max_len: usize,
+    output: Option<String>,
+}
+
+impl StickerApp for FilterLenApp {
+    fn app() -> App<'static, 'static> {
+        App::new("filter-len")
+            .settings(DEFAULT_CLAP_SETTINGS)
+            .about("Filter corpus by the sentence length in pieces")
+            .arg(
+                Arg::with_name(CONFIG)
+                    .help("Sticker configuration file")
+                    .index(1)
+                    .required(true),
+            )
+            .arg(
+                Arg::with_name(MAX_LEN)
+                    .help("Maximum sentence length")
+                    .index(2)
+                    .required(true),
+            )
+            .arg(Arg::with_name(INPUT).help("Input corpus").index(3))
+            .arg(Arg::with_name(OUTPUT).help("Output corpus").index(4))
+    }
+
+    fn parse(matches: &ArgMatches) -> Self {
+        let config = matches.value_of(CONFIG).unwrap().into();
+        let max_len = matches
+            .value_of(MAX_LEN)
+            .unwrap()
+            .parse()
+            .or_exit("Cannot parse maximum sentence length", 1);
+        let input = matches.value_of(INPUT).map(ToOwned::to_owned);
+        let output = matches.value_of(OUTPUT).map(ToOwned::to_owned);
+
+        FilterLenApp {
+            config,
+            max_len,
+            input,
+            output,
+        }
+    }
+
+    fn run(&self) {
+        let config = load_config(&self.config);
+
+        let tokenizer = load_tokenizer(&config);
+
+        let input = Input::from(self.input.as_ref());
+        let output = Output::from(self.output.as_ref());
+
+        let treebank_reader = Reader::new(
+            input
+                .buf_read()
+                .or_exit("Cannot open corpus for reading", 1),
+        );
+
+        let mut treebank_writer = Writer::new(BufWriter::new(
+            output.write().or_exit("Cannot open corpus for writing", 1),
+        ));
+
+        for sentence in treebank_reader.sentences() {
+            let sentence = sentence.or_exit("Cannot read sentence from treebank", 1);
+
+            let sentence_with_pieces = tokenizer.tokenize(sentence);
+
+            if sentence_with_pieces.pieces.len() <= self.max_len {
+                treebank_writer
+                    .write_sentence(&sentence_with_pieces.sentence)
+                    .or_exit("Cannot write sentence", 1);
+            }
+        }
+    }
+}
