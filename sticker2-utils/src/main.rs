@@ -28,6 +28,7 @@ fn main() {
     let apps = vec![
         subcommands::AnnotateApp::app(),
         subcommands::DistillApp::app(),
+        subcommands::FilterLenApp::app(),
         subcommands::FinetuneApp::app(),
         subcommands::PrepareApp::app(),
         subcommands::ServerApp::app(),
@@ -63,6 +64,10 @@ fn main() {
         }
         "finetune" => {
             subcommands::FinetuneApp::parse(matches.subcommand_matches("finetune").unwrap()).run()
+        }
+        "filter-len" => {
+            subcommands::FilterLenApp::parse(matches.subcommand_matches("filter-len").unwrap())
+                .run()
         }
         "prepare" => {
             subcommands::PrepareApp::parse(matches.subcommand_matches("prepare").unwrap()).run()
