@@ -71,7 +71,17 @@ pub enum PositionEmbeddings {
     Model,
 
     /// Use generated sinusoidal embeddings.
-    Sinusoidal,
+    ///
+    /// If normalize is `true`, the sinusoidal embeddings are
+    /// normalized using their l2 norm.
+    Sinusoidal {
+        #[serde(default = "sinusoidal_normalize_default")]
+        normalize: bool,
+    },
+}
+
+fn sinusoidal_normalize_default() -> bool {
+    true
 }
 
 #[derive(Debug, Deserialize, Serialize)]

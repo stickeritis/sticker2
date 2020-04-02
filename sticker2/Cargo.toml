@@ -25,7 +25,7 @@ sentencepiece = "0.1.3"
 serde = { version = "1", features = [ "derive" ] }
 serde_json = "1"
 sticker-encoders = "0.3.2"
-sticker-transformers = { version = "0.4.1", default-features = false }
+sticker-transformers = { version = "0.5", default-features = false }
 tch = "0.1.5"
 toml = "0.5"
 wordpieces = "0.2"
