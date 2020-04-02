@@ -26,9 +26,9 @@ rec {
   # workspaceMembers."${crateName}".build.override { features = [ "default" "feature1" ... ]; }.
   workspaceMembers = {
     "sticker2" = rec {
-      packageId = "sticker2 0.2.0 (path+file:///Users/daniel/git/sticker2/sticker2)";
+      packageId = "sticker2 0.2.0 (path+file:///home/daniel/git/sticker2/sticker2)";
       build = internal.buildRustCrateWithFeatures {
-        packageId = "sticker2 0.2.0 (path+file:///Users/daniel/git/sticker2/sticker2)";
+        packageId = "sticker2 0.2.0 (path+file:///home/daniel/git/sticker2/sticker2)";
       };
 
       # Debug support which might change between releases.
@@ -36,9 +36,9 @@ rec {
       debug = internal.debugCrate { inherit packageId; };
     };
     "sticker2-utils" = rec {
-      packageId = "sticker2-utils 0.2.0 (path+file:///Users/daniel/git/sticker2/sticker2-utils)";
+      packageId = "sticker2-utils 0.2.0 (path+file:///home/daniel/git/sticker2/sticker2-utils)";
       build = internal.buildRustCrateWithFeatures {
-        packageId = "sticker2-utils 0.2.0 (path+file:///Users/daniel/git/sticker2/sticker2-utils)";
+        packageId = "sticker2-utils 0.2.0 (path+file:///home/daniel/git/sticker2/sticker2-utils)";
       };
 
       # Debug support which might change between releases.
@@ -3699,11 +3699,11 @@ rec {
         ];
         
       };
-      "sticker-transformers 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)" = rec {
+      "sticker-transformers 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)" = rec {
         crateName = "sticker-transformers";
-        version = "0.4.2";
+        version = "0.5.0";
         edition = "2018";
-        sha256 = "01j0yhdpxczbzcpg5s8smd7nn4kmqh3j727z75id2q7llrx0lzj5";
+        sha256 = "159lmgr5iqiniyvb55mr4wd7v8a2qbg46fxmzk00qfv61xmcznf6";
         authors = [
           "Daniël de Kok <me@danieldk.eu>"
         ];
@@ -3733,7 +3733,7 @@ rec {
         };
         resolvedDefaultFeatures = [ "hdf5" "load-hdf5" ];
       };
-      "sticker2 0.2.0 (path+file:///Users/daniel/git/sticker2/sticker2)" = rec {
+      "sticker2 0.2.0 (path+file:///home/daniel/git/sticker2/sticker2)" = rec {
         crateName = "sticker2";
         version = "0.2.0";
         edition = "2018";
@@ -3797,7 +3797,7 @@ rec {
           }
           {
             name = "sticker-transformers";
-            packageId = "sticker-transformers 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)";
+            packageId = "sticker-transformers 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)";
             usesDefaultFeatures = false;
           }
           {
@@ -3837,7 +3837,7 @@ rec {
         };
         resolvedDefaultFeatures = [ "default" "load-hdf5" "model-tests" ];
       };
-      "sticker2-utils 0.2.0 (path+file:///Users/daniel/git/sticker2/sticker2-utils)" = rec {
+      "sticker2-utils 0.2.0 (path+file:///home/daniel/git/sticker2/sticker2-utils)" = rec {
         crateName = "sticker2-utils";
         version = "0.2.0";
         edition = "2018";
@@ -3888,12 +3888,12 @@ rec {
           }
           {
             name = "sticker-transformers";
-            packageId = "sticker-transformers 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)";
+            packageId = "sticker-transformers 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)";
             usesDefaultFeatures = false;
           }
           {
             name = "sticker2";
-            packageId = "sticker2 0.2.0 (path+file:///Users/daniel/git/sticker2/sticker2)";
+            packageId = "sticker2 0.2.0 (path+file:///home/daniel/git/sticker2/sticker2)";
             usesDefaultFeatures = false;
           }
           {

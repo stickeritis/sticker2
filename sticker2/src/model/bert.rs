@@ -50,15 +50,18 @@ impl BertEmbeddingLayer {
     ) -> Self {
         match (pretrain_config, position_embeddings) {
             (PretrainConfig::Bert(config), PositionEmbeddings::Model) => {
-                BertEmbeddingLayer::Bert(BertEmbeddings::new(vs, config, true))
+                BertEmbeddingLayer::Bert(BertEmbeddings::new(vs, config))
             }
-            (PretrainConfig::Bert(config), PositionEmbeddings::Sinusoidal) => {
-                BertEmbeddingLayer::Sinusoidal(SinusoidalEmbeddings::new(vs, config))
+            (PretrainConfig::Bert(config), PositionEmbeddings::Sinusoidal { normalize }) => {
+                let normalize = if normalize { Some(2.) } else { None };
+                BertEmbeddingLayer::Sinusoidal(SinusoidalEmbeddings::new(vs, config, normalize))
             }
             (PretrainConfig::XlmRoberta(config), PositionEmbeddings::Model) => {
                 BertEmbeddingLayer::Roberta(RobertaEmbeddings::new(vs, config))
             }
-            (PretrainConfig::XlmRoberta(_), PositionEmbeddings::Sinusoidal) => unreachable!(),
+            (PretrainConfig::XlmRoberta(_), PositionEmbeddings::Sinusoidal { .. }) => {
+                unreachable!()
+            }
         }
     }
 
