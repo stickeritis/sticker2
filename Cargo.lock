@@ -217,13 +217,13 @@ dependencies = [
 
 [[package]]
 name = "conllu"
-version = "0.3.0"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9dee5dd5b0b56cc292948eac948265b1f464bbd8b8bb1711b949624c8e4564b9"
+checksum = "5651bf50de5acdb5960ef6a3f18009ad6367a7c3515f95f67186f081bc6c5306"
 dependencies = [
- "failure",
- "itertools 0.8.2",
+ "itertools 0.9.0",
  "petgraph",
+ "thiserror",
 ]
 
 [[package]]
@@ -447,9 +447,9 @@ dependencies = [
 
 [[package]]
 name = "fixedbitset"
-version = "0.1.9"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "86d4de0081402f5e88cdac65c8dcdcc73118c1a7a465e2a05f0da05843a8ea33"
+checksum = "37ab347416e802de484e4d03c7316c48f1ecb56574dfd4a46a80f173ce1de04d"
 
 [[package]]
 name = "flate2"
@@ -564,6 +564,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "indexmap"
+version = "1.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "076f042c5b7b98f31d205f1249267e12a6518c1481e9dae9764af19b707d2292"
+dependencies = [
+ "autocfg 1.0.0",
+]
+
+[[package]]
 name = "indicatif"
 version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -589,6 +598,15 @@ name = "itertools"
 version = "0.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f56a2d0bc861f9165be4eb3442afd3c236d8a98afd426f65d92324ae1091a484"
+dependencies = [
+ "either",
+]
+
+[[package]]
+name = "itertools"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "284f18f85651fe11e8a991b2adb42cb078325c996ed026d994719efcfca1d54b"
 dependencies = [
  "either",
 ]
@@ -879,12 +897,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "ordermap"
-version = "0.3.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a86ed3f5f244b372d6b1a00b72ef7f8876d0bc6a78a4c9985c53614041512063"
-
-[[package]]
 name = "parking_lot"
 version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -913,12 +925,12 @@ dependencies = [
 
 [[package]]
 name = "petgraph"
-version = "0.4.13"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9c3659d1ee90221741f65dd128d9998311b0e40c5d3c23a62445938214abce4f"
+checksum = "29c127eea4a29ec6c85d153c59dc1213f33ec74cead30fe4730aecc88cc1fd92"
 dependencies = [
  "fixedbitset",
- "ordermap",
+ "indexmap",
 ]
 
 [[package]]
@@ -1309,23 +1321,23 @@ checksum = "388a1df253eca08550bef6c72392cfe7c30914bf41df5269b68cbd6ff8f570a3"
 
 [[package]]
 name = "sentencepiece"
-version = "0.1.3"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "51eec0046038289a2f4c8e566a36b905f3ffac3b8403216f0d575e81291f0d38"
+checksum = "8282c3f70a53d37d1cec2d67bd35272bb3b54ce4d244107d1597ad69cd44297a"
 dependencies = [
- "failure",
  "libc",
  "num-derive",
  "num-traits",
  "protobuf",
  "sentencepiece-sys",
+ "thiserror",
 ]
 
 [[package]]
 name = "sentencepiece-sys"
-version = "0.1.3"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bed6fff7fac6b3092a8ebe5abca4b6e787caf98b3cd429138812a9eb195f10a4"
+checksum = "994f378a34bf94087a6da652e8945f3bd8852b851a7e5d98099df12f03753f1e"
 dependencies = [
  "cc",
  "pkg-config",
@@ -1415,18 +1427,18 @@ checksum = "29f1026ef7b2ded56453d708809e15f148b7f5b6a51e1ee0237964881ab85680"
 
 [[package]]
 name = "sticker-encoders"
-version = "0.3.2"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3fbb36c9722a42bdc1a6db151f7299c80fd2fe49f88d47ffc0ec8f4a4bd473b9"
+checksum = "7b962a7e6c1a18823bb1418ca503f41e8e32529726b9848a77b8e5d84c6f2de9"
 dependencies = [
  "conllu",
  "edit_tree",
- "failure",
  "numberer",
  "ordered-float",
  "petgraph",
  "serde",
  "serde_derive",
+ "thiserror",
 ]
 
 [[package]]
@@ -1442,14 +1454,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "sticker-transformers"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e3fe39d943156906202cece2f14d32470bafe0936584ece88f765ccc7b4926d0"
+dependencies = [
+ "hdf5",
+ "serde",
+ "tch",
+ "thiserror",
+]
+
+[[package]]
 name = "sticker2"
 version = "0.2.0"
 dependencies = [
+ "anyhow",
  "approx",
  "conllu",
  "criterion",
  "edit_tree",
- "failure",
  "hdf5",
  "maplit",
  "ndarray 0.13.0",
@@ -1462,8 +1486,9 @@ dependencies = [
  "serde",
  "serde_json",
  "sticker-encoders",
- "sticker-transformers",
+ "sticker-transformers 0.6.0",
  "tch",
+ "thiserror",
  "toml",
  "wordpieces",
 ]
@@ -1472,16 +1497,16 @@ dependencies = [
 name = "sticker2-utils"
 version = "0.2.0"
 dependencies = [
+ "anyhow",
  "clap",
  "conllu",
- "failure",
  "indicatif",
  "itertools 0.8.2",
  "ordered-float",
  "serde_yaml",
  "stdinout",
  "sticker-encoders",
- "sticker-transformers",
+ "sticker-transformers 0.5.0",
  "sticker2",
  "tch",
  "threadpool",
@@ -1557,6 +1582,26 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d326610f408c7a4eb6f51c37c330e496b08506c9457c9d34287ecc38809fb060"
 dependencies = [
  "unicode-width",
+]
+
+[[package]]
+name = "thiserror"
+version = "1.0.15"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "54b3d3d2ff68104100ab257bb6bb0cb26c901abe4bd4ba15961f3bf867924012"
+dependencies = [
+ "thiserror-impl",
+]
+
+[[package]]
+name = "thiserror-impl"
+version = "1.0.15"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ca972988113b7715266f91250ddb98070d033c62a011fa0fcc57434a649310dd"
+dependencies = [
+ "proc-macro2 1.0.8",
+ "quote 1.0.2",
+ "syn 1.0.14",
 ]
 
 [[package]]
@@ -1814,12 +1859,12 @@ dependencies = [
 
 [[package]]
 name = "wordpieces"
-version = "0.2.1"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "81998ca69f6f03ff8c2fcb64cfef35ac8a0897655f12c7510a884fb420def441"
+checksum = "2f6de2f8880550d6ca89295ceb468d1e52ec23c1ad531d8c933db020553a032f"
 dependencies = [
- "failure",
  "fst",
+ "thiserror",
 ]
 
 [[package]]

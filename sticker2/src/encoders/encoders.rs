@@ -3,7 +3,6 @@ use std::ops::Deref;
 
 use conllu::graph::Sentence;
 use edit_tree::EditTree;
-use failure::Fallible;
 use numberer::Numberer;
 use serde::{Deserialize, Serialize};
 use sticker_encoders::categorical::{ImmutableCategoricalEncoder, MutableCategoricalEncoder};
@@ -13,6 +12,7 @@ use sticker_encoders::deprel::{
 use sticker_encoders::layer::LayerEncoder;
 use sticker_encoders::lemma::EditTreeEncoder;
 use sticker_encoders::{EncodingProb, SentenceDecoder, SentenceEncoder};
+use thiserror::Error;
 
 use crate::encoders::{DependencyEncoder, EncoderType, EncodersConfig};
 
@@ -42,7 +42,9 @@ where
 {
     type Encoding = usize;
 
-    fn decode<S>(&self, labels: &[S], sentence: &mut Sentence) -> Fallible<()>
+    type Error = D::Error;
+
+    fn decode<S>(&self, labels: &[S], sentence: &mut Sentence) -> Result<(), Self::Error>
     where
         S: AsRef<[EncodingProb<Self::Encoding>]>,
     {
@@ -60,7 +62,9 @@ where
 {
     type Encoding = usize;
 
-    fn encode(&self, sentence: &Sentence) -> Fallible<Vec<Self::Encoding>> {
+    type Error = E::Error;
+
+    fn encode(&self, sentence: &Sentence) -> Result<Vec<Self::Encoding>, Self::Error> {
         match self {
             CategoricalEncoderWrap::Immutable(encoder) => encoder.encode(sentence),
             CategoricalEncoderWrap::Mutable(encoder) => encoder.encode(sentence),
@@ -78,6 +82,38 @@ where
             CategoricalEncoderWrap::Mutable(encoder) => encoder.len(),
         }
     }
+}
+
+/// Wrapper of encoder error types.
+#[derive(Debug, Error)]
+pub enum DecoderError {
+    #[error(transparent)]
+    Lemma(<EditTreeEncoder as SentenceDecoder>::Error),
+
+    #[error(transparent)]
+    Layer(<LayerEncoder as SentenceDecoder>::Error),
+
+    #[error(transparent)]
+    RelativePOS(<RelativePOSEncoder as SentenceDecoder>::Error),
+
+    #[error(transparent)]
+    RelativePosition(<RelativePositionEncoder as SentenceDecoder>::Error),
+}
+
+/// Wrapper of encoder error types.
+#[derive(Debug, Error)]
+pub enum EncoderError {
+    #[error(transparent)]
+    Lemma(<EditTreeEncoder as SentenceEncoder>::Error),
+
+    #[error(transparent)]
+    Layer(<LayerEncoder as SentenceEncoder>::Error),
+
+    #[error(transparent)]
+    RelativePOS(<RelativePOSEncoder as SentenceEncoder>::Error),
+
+    #[error(transparent)]
+    RelativePosition(<RelativePositionEncoder as SentenceEncoder>::Error),
 }
 
 /// Wrapper of the various supported encoders.
@@ -106,15 +142,25 @@ impl Encoder {
 impl SentenceDecoder for Encoder {
     type Encoding = usize;
 
-    fn decode<S>(&self, labels: &[S], sentence: &mut Sentence) -> Fallible<()>
+    type Error = DecoderError;
+
+    fn decode<S>(&self, labels: &[S], sentence: &mut Sentence) -> Result<(), Self::Error>
     where
         S: AsRef<[EncodingProb<Self::Encoding>]>,
     {
         match self {
-            Encoder::Layer(decoder) => decoder.decode(labels, sentence),
-            Encoder::Lemma(decoder) => decoder.decode(labels, sentence),
-            Encoder::RelativePOS(decoder) => decoder.decode(labels, sentence),
-            Encoder::RelativePosition(decoder) => decoder.decode(labels, sentence),
+            Encoder::Layer(decoder) => decoder
+                .decode(labels, sentence)
+                .map_err(DecoderError::Layer),
+            Encoder::Lemma(decoder) => decoder
+                .decode(labels, sentence)
+                .map_err(DecoderError::Lemma),
+            Encoder::RelativePOS(decoder) => decoder
+                .decode(labels, sentence)
+                .map_err(DecoderError::RelativePOS),
+            Encoder::RelativePosition(decoder) => decoder
+                .decode(labels, sentence)
+                .map_err(DecoderError::RelativePosition),
         }
     }
 }
@@ -122,12 +168,18 @@ impl SentenceDecoder for Encoder {
 impl SentenceEncoder for Encoder {
     type Encoding = usize;
 
-    fn encode(&self, sentence: &Sentence) -> Fallible<Vec<Self::Encoding>> {
+    type Error = EncoderError;
+
+    fn encode(&self, sentence: &Sentence) -> Result<Vec<Self::Encoding>, Self::Error> {
         match self {
-            Encoder::Layer(encoder) => encoder.encode(sentence),
-            Encoder::Lemma(encoder) => encoder.encode(sentence),
-            Encoder::RelativePOS(encoder) => encoder.encode(sentence),
-            Encoder::RelativePosition(encoder) => encoder.encode(sentence),
+            Encoder::Layer(encoder) => encoder.encode(sentence).map_err(EncoderError::Layer),
+            Encoder::Lemma(encoder) => encoder.encode(sentence).map_err(EncoderError::Lemma),
+            Encoder::RelativePOS(encoder) => {
+                encoder.encode(sentence).map_err(EncoderError::RelativePOS)
+            }
+            Encoder::RelativePosition(encoder) => encoder
+                .encode(sentence)
+                .map_err(EncoderError::RelativePosition),
         }
     }
 }

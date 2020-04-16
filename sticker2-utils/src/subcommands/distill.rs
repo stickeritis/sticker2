@@ -3,12 +3,11 @@ use std::collections::btree_map::{BTreeMap, Entry};
 use std::fs::File;
 use std::io::{BufReader, Read, Seek};
 
+use anyhow::{Context, Result};
 use clap::{App, Arg, ArgMatches};
-use failure::{Fallible, ResultExt};
 use indicatif::{ProgressBar, ProgressStyle};
 use itertools::Itertools;
 use ordered_float::NotNan;
-use stdinout::OrExit;
 use sticker2::config::Config;
 use sticker2::dataset::{ConlluDataSet, DataSet, SequenceLength};
 use sticker2::encoders::Encoders;
@@ -79,7 +78,7 @@ impl DistillApp {
         teacher_train_file: &File,
         student_train_file: &File,
         validation_file: &mut File,
-    ) -> Fallible<()> {
+    ) -> Result<()> {
         let mut best_step = 0;
         let mut best_acc = 0.0;
 
@@ -88,7 +87,7 @@ impl DistillApp {
         let n_steps = self
             .train_duration
             .to_steps(&teacher_train_file, self.batch_size)
-            .or_exit("Cannot determine number of training steps", 1);
+            .context("Cannot determine number of training steps")?;
 
         let train_progress = ProgressBar::new(n_steps as u64);
         train_progress.set_style(ProgressStyle::default_bar().template(
@@ -96,8 +95,8 @@ impl DistillApp {
         ));
 
         while global_step < n_steps - 1 {
-            let mut teacher_train_dataset = Self::open_dataset(&teacher_train_file);
-            let mut student_train_dataset = Self::open_dataset(&student_train_file);
+            let mut teacher_train_dataset = Self::open_dataset(&teacher_train_file)?;
+            let mut student_train_dataset = Self::open_dataset(&student_train_file)?;
 
             let teacher_train_batches = teacher_train_dataset.batches(
                 &teacher.encoders,
@@ -147,6 +146,7 @@ impl DistillApp {
                     student
                         .vs
                         .save(format!("distill-step-{}", global_step))
+                        .map_err(|err| err.compat())
                         .context(format!(
                             "Cannot save variable store for step {}",
                             global_step
@@ -173,16 +173,16 @@ impl DistillApp {
     fn train_steps(
         &self,
         progress: &ProgressBar,
-        teacher_batches: impl Iterator<Item = Fallible<Tensors>>,
-        student_batches: impl Iterator<Item = Fallible<Tensors>>,
+        teacher_batches: impl Iterator<Item = Result<Tensors>>,
+        student_batches: impl Iterator<Item = Result<Tensors>>,
         global_step: &mut usize,
         optimizer: &mut AdamW,
         teacher: &BertModel,
         student: &BertModel,
-    ) -> Fallible<()> {
+    ) -> Result<()> {
         for (teacher_batch, student_batch) in teacher_batches.zip(student_batches) {
-            let teacher_batch = teacher_batch.or_exit("Cannot read teacher batch", 1);
-            let student_batch = student_batch.or_exit("Cannot read student batch", 1);
+            let teacher_batch = teacher_batch.context("Cannot read teacher batch")?;
+            let student_batch = student_batch.context("Cannot read student batch")?;
 
             // Compute masks.
             let teacher_attention_mask =
@@ -310,16 +310,16 @@ impl DistillApp {
         Ok(())
     }
 
-    fn open_dataset(file: &File) -> ConlluDataSet<impl Read + Seek> {
+    fn open_dataset(file: &File) -> Result<ConlluDataSet<impl Read + Seek>> {
         let read = BufReader::new(
             file.try_clone()
-                .or_exit("Cannot open data set for reading", 1),
+                .context("Cannot open data set for reading")?,
         );
-        ConlluDataSet::new(read)
+        Ok(ConlluDataSet::new(read))
     }
 
-    fn fresh_student(&self, student_config: &Config, teacher: &Model) -> StudentModel {
-        let pretrain_config = load_pretrain_config(student_config);
+    fn fresh_student(&self, student_config: &Config, teacher: &Model) -> Result<StudentModel> {
+        let pretrain_config = load_pretrain_config(student_config)?;
 
         let vs = VarStore::new(self.device);
 
@@ -330,15 +330,15 @@ impl DistillApp {
             0.1,
             student_config.model.position_embeddings.clone(),
         )
-        .or_exit("Cannot construct fresh student model", 1);
+        .context("Cannot construct fresh student model")?;
 
-        let tokenizer = load_tokenizer(&student_config);
+        let tokenizer = load_tokenizer(&student_config)?;
 
-        StudentModel {
+        Ok(StudentModel {
             inner,
             tokenizer,
             vs,
-        }
+        })
     }
 
     pub fn create_lr_schedules(
@@ -372,8 +372,8 @@ impl DistillApp {
         model: &BertModel,
         file: &mut File,
         global_step: usize,
-    ) -> Fallible<f32> {
-        let read_progress = ReadProgress::new(file).or_exit("Cannot create progress bar", 1);
+    ) -> Result<f32> {
+        let read_progress = ReadProgress::new(file).context("Cannot create progress bar")?;
         let progress_bar = read_progress.progress_bar().clone();
         progress_bar.set_style(ProgressStyle::default_bar().template(
             "[Time: {elapsed_precise}, ETA: {eta_precise}] {bar} {percent}% validation {msg}",
@@ -600,7 +600,7 @@ impl StickerApp for DistillApp {
             )
     }
 
-    fn parse(matches: &ArgMatches) -> Self {
+    fn parse(matches: &ArgMatches) -> Result<Self> {
         let teacher_config = matches.value_of(TEACHER_CONFIG).unwrap().into();
         let student_config = matches.value_of(STUDENT_CONFIG).unwrap().into();
         let train_data = matches.value_of(TRAIN_DATA).map(ToOwned::to_owned).unwrap();
@@ -612,11 +612,11 @@ impl StickerApp for DistillApp {
             .value_of(BATCH_SIZE)
             .unwrap()
             .parse()
-            .or_exit("Cannot parse batch size", 1);
+            .context("Cannot parse batch size")?;
         let device = match matches.value_of("GPU") {
             Some(gpu) => Device::Cuda(
                 gpu.parse()
-                    .or_exit(format!("Cannot parse GPU number ({})", gpu), 1),
+                    .context(format!("Cannot parse GPU number ({})", gpu))?,
             ),
             None => Device::Cpu,
         };
@@ -624,59 +624,60 @@ impl StickerApp for DistillApp {
             .value_of(EVAL_STEPS)
             .unwrap()
             .parse()
-            .or_exit("Cannot parse number of batches after which to save", 1);
+            .context("Cannot parse number of batches after which to save")?;
         let hard_loss = matches.is_present(HARD_LOSS);
         let initial_lr_classifier = matches
             .value_of(INITIAL_LR_CLASSIFIER)
             .unwrap()
             .parse()
-            .or_exit("Cannot parse initial classifier learning rate", 1);
+            .context("Cannot parse initial classifier learning rate")?;
         let initial_lr_encoder = matches
             .value_of(INITIAL_LR_ENCODER)
             .unwrap()
             .parse()
-            .or_exit("Cannot parse initial encoder learning rate", 1);
+            .context("Cannot parse initial encoder learning rate")?;
         let lr_decay_rate = matches
             .value_of(LR_DECAY_RATE)
             .unwrap()
             .parse()
-            .or_exit("Cannot parse exponential decay rate", 1);
+            .context("Cannot parse exponential decay rate")?;
         let lr_decay_steps = matches
             .value_of(LR_DECAY_STEPS)
             .unwrap()
             .parse()
-            .or_exit("Cannot parse exponential decay steps", 1);
+            .context("Cannot parse exponential decay steps")?;
         let max_len = matches
             .value_of(MAX_LEN)
-            .map(|v| v.parse().or_exit("Cannot parse maximum sentence length", 1))
+            .map(|v| v.parse().context("Cannot parse maximum sentence length"))
+            .transpose()?
             .map(SequenceLength::Tokens);
         let warmup_steps = matches
             .value_of(WARMUP)
             .unwrap()
             .parse()
-            .or_exit("Cannot parse warmup", 1);
+            .context("Cannot parse warmup")?;
         let weight_decay = matches
             .value_of(WEIGHT_DECAY)
             .unwrap()
             .parse()
-            .or_exit("Cannot parse weight decay", 1);
+            .context("Cannot parse weight decay")?;
 
         // If steps is present, it overrides epochs.
         let train_duration = if let Some(steps) = matches.value_of(STEPS) {
             let steps = steps
                 .parse()
-                .or_exit("Cannot parse the number of training steps", 1);
+                .context("Cannot parse the number of training steps")?;
             TrainDuration::Steps(steps)
         } else {
             let epochs = matches
                 .value_of(EPOCHS)
                 .unwrap()
                 .parse()
-                .or_exit("Cannot parse number of training epochs", 1);
+                .context("Cannot parse number of training epochs")?;
             TrainDuration::Epochs(epochs)
         };
 
-        DistillApp {
+        Ok(DistillApp {
             batch_size,
             device,
             eval_steps,
@@ -695,21 +696,23 @@ impl StickerApp for DistillApp {
             train_duration,
             validation_data,
             weight_decay,
-        }
+        })
     }
 
-    fn run(&self) {
-        let student_config = load_config(&self.student_config);
-        let teacher = Model::load(&self.teacher_config, self.device, true);
+    fn run(&self) -> Result<()> {
+        let student_config = load_config(&self.student_config)?;
+        let teacher = Model::load(&self.teacher_config, self.device, true)?;
 
-        let teacher_train_file =
-            File::open(&self.train_data).or_exit("Cannot open train data file", 1);
-        let student_train_file =
-            File::open(&self.train_data).or_exit("Cannot open train data file", 1);
-        let mut validation_file =
-            File::open(&self.validation_data).or_exit("Cannot open validation data file", 1);
+        let teacher_train_file = File::open(&self.train_data)
+            .context(format!("Cannot open train data file: {}", self.train_data))?;
+        let student_train_file = File::open(&self.train_data)
+            .context(format!("Cannot open train data file: {}", self.train_data))?;
+        let mut validation_file = File::open(&self.validation_data).context(format!(
+            "Cannot open validation data file: {}",
+            self.validation_data
+        ))?;
 
-        let student = self.fresh_student(&student_config, &teacher);
+        let student = self.fresh_student(&student_config, &teacher)?;
 
         let mut optimizer = AdamW::new(&student.vs);
 
@@ -721,7 +724,7 @@ impl StickerApp for DistillApp {
             &student_train_file,
             &mut validation_file,
         )
-        .or_exit("Model distillation failed", 1);
+        .context("Model distillation failed")
     }
 }
 
@@ -732,14 +735,14 @@ enum TrainDuration {
 }
 
 impl TrainDuration {
-    fn to_steps(&self, train_file: &File, batch_size: usize) -> Fallible<usize> {
+    fn to_steps(&self, train_file: &File, batch_size: usize) -> Result<usize> {
         use TrainDuration::*;
 
         match *self {
             Epochs(epochs) => {
                 eprintln!("Counting number of steps in an epoch...");
                 let read_progress =
-                    ReadProgress::new(train_file.try_clone()?).or_exit("Cannot open train file", 1);
+                    ReadProgress::new(train_file.try_clone()?).context("Cannot open train file")?;
 
                 let progress_bar = read_progress.progress_bar().clone();
                 progress_bar

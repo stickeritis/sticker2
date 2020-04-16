@@ -2,7 +2,7 @@ use std::borrow::{Borrow, BorrowMut};
 use std::collections::HashMap;
 use std::convert::TryInto;
 
-use failure::Fallible;
+use anyhow::Error;
 use ndarray::{Array1, ArrayD, Axis};
 use sticker_encoders::{EncodingProb, SentenceDecoder};
 use tch::Device;
@@ -34,7 +34,7 @@ impl Tagger {
     pub fn tag_sentences(
         &self,
         sentences: &mut [impl BorrowMut<SentenceWithPieces>],
-    ) -> Fallible<()> {
+    ) -> Result<(), Error> {
         let top_k_numeric = self.top_k_numeric_(sentences)?;
 
         for (top_k, sentence) in top_k_numeric.into_iter().zip(sentences.iter_mut()) {
@@ -52,7 +52,10 @@ impl Tagger {
     }
 
     /// Construct the tensor representations of a batch of sentences.
-    fn prepare_batch(&self, sentences: &[impl Borrow<SentenceWithPieces>]) -> Fallible<Tensors> {
+    fn prepare_batch(
+        &self,
+        sentences: &[impl Borrow<SentenceWithPieces>],
+    ) -> Result<Tensors, Error> {
         let max_seq_len = sentences
             .iter()
             .map(|sentence| sentence.borrow().pieces.len())
@@ -84,7 +87,7 @@ impl Tagger {
     fn top_k_numeric_<'a, S>(
         &self,
         sentences: &'a [S],
-    ) -> Fallible<Vec<HashMap<String, Vec<Vec<EncodingProb<usize>>>>>>
+    ) -> Result<Vec<HashMap<String, Vec<Vec<EncodingProb<usize>>>>>, Error>
     where
         S: Borrow<SentenceWithPieces>,
     {

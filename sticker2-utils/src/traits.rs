@@ -1,3 +1,4 @@
+use anyhow::Result;
 use clap::{App, AppSettings, ArgMatches};
 
 pub static DEFAULT_CLAP_SETTINGS: &[AppSettings] = &[
@@ -5,10 +6,13 @@ pub static DEFAULT_CLAP_SETTINGS: &[AppSettings] = &[
     AppSettings::UnifiedHelpMessage,
 ];
 
-pub trait StickerApp {
+pub trait StickerApp
+where
+    Self: Sized,
+{
     fn app() -> App<'static, 'static>;
 
-    fn parse(matches: &ArgMatches) -> Self;
+    fn parse(matches: &ArgMatches) -> Result<Self>;
 
-    fn run(&self);
+    fn run(&self) -> Result<()>;
 }

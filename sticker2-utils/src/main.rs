@@ -1,5 +1,6 @@
 use std::io::stdout;
 
+use anyhow::Result;
 use clap::{crate_version, App, AppSettings, Arg, Shell, SubCommand};
 
 pub mod io;
@@ -23,7 +24,7 @@ static DEFAULT_CLAP_SETTINGS: &[AppSettings] = &[
     AppSettings::SubcommandRequiredElseHelp,
 ];
 
-fn main() {
+fn main() -> Result<()> {
     // Known subapplications.
     let apps = vec![
         subcommands::AnnotateApp::app(),
@@ -49,7 +50,7 @@ fn main() {
 
     match matches.subcommand_name().unwrap() {
         "annotate" => {
-            subcommands::AnnotateApp::parse(matches.subcommand_matches("annotate").unwrap()).run()
+            subcommands::AnnotateApp::parse(matches.subcommand_matches("annotate").unwrap())?.run()
         }
         "completions" => {
             let shell = matches
@@ -58,22 +59,23 @@ fn main() {
                 .value_of("shell")
                 .unwrap();
             write_completion_script(cli, shell.parse::<Shell>().unwrap());
+            Ok(())
         }
         "distill" => {
-            subcommands::DistillApp::parse(matches.subcommand_matches("distill").unwrap()).run()
+            subcommands::DistillApp::parse(matches.subcommand_matches("distill").unwrap())?.run()
         }
         "finetune" => {
-            subcommands::FinetuneApp::parse(matches.subcommand_matches("finetune").unwrap()).run()
+            subcommands::FinetuneApp::parse(matches.subcommand_matches("finetune").unwrap())?.run()
         }
         "filter-len" => {
-            subcommands::FilterLenApp::parse(matches.subcommand_matches("filter-len").unwrap())
+            subcommands::FilterLenApp::parse(matches.subcommand_matches("filter-len").unwrap())?
                 .run()
         }
         "prepare" => {
-            subcommands::PrepareApp::parse(matches.subcommand_matches("prepare").unwrap()).run()
+            subcommands::PrepareApp::parse(matches.subcommand_matches("prepare").unwrap())?.run()
         }
         "server" => {
-            subcommands::ServerApp::parse(matches.subcommand_matches("server").unwrap()).run()
+            subcommands::ServerApp::parse(matches.subcommand_matches("server").unwrap())?.run()
         }
         _unknown => unreachable!(),
     }

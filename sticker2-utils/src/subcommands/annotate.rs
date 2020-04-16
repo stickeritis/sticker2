@@ -1,8 +1,9 @@
 use std::io::BufWriter;
 
+use anyhow::{Context, Result};
 use clap::{App, Arg, ArgMatches};
 use conllu::io::{ReadSentence, Reader, WriteSentence, Writer};
-use stdinout::{Input, OrExit, Output};
+use stdinout::{Input, Output};
 use sticker2::input::Tokenize;
 use sticker2::tagger::Tagger;
 use tch::{self, Device};
@@ -35,7 +36,13 @@ pub struct AnnotateApp {
 }
 
 impl AnnotateApp {
-    fn process<R, W>(&self, tokenizer: &dyn Tokenize, tagger: Tagger, read: R, write: W)
+    fn process<R, W>(
+        &self,
+        tokenizer: &dyn Tokenize,
+        tagger: Tagger,
+        read: R,
+        write: W,
+    ) -> Result<()>
     where
         R: ReadSentence,
         W: WriteSentence,
@@ -52,13 +59,15 @@ impl AnnotateApp {
         );
 
         for sentence in read.sentences() {
-            let sentence = sentence.or_exit("Cannot parse sentence", 1);
+            let sentence = sentence.context("Cannot parse sentence")?;
             sent_proc
                 .process(sentence)
-                .or_exit("Error processing sentence", 1);
+                .context("Error processing sentence")?;
 
             speed.count_sentence()
         }
+
+        Ok(())
     }
 }
 
@@ -122,17 +131,17 @@ impl StickerApp for AnnotateApp {
             )
     }
 
-    fn parse(matches: &ArgMatches) -> Self {
+    fn parse(matches: &ArgMatches) -> Result<Self> {
         let config = matches.value_of(CONFIG).unwrap().into();
         let batch_size = matches
             .value_of(BATCH_SIZE)
             .unwrap()
             .parse()
-            .or_exit("Cannot parse batch size", 1);
+            .context("Cannot parse batch size")?;
         let device = match matches.value_of("GPU") {
             Some(gpu) => Device::Cuda(
                 gpu.parse()
-                    .or_exit(format!("Cannot parse GPU number ({})", gpu), 1),
+                    .context(format!("Cannot parse GPU number ({})", gpu))?,
             ),
             None => Device::Cpu,
         };
@@ -141,23 +150,24 @@ impl StickerApp for AnnotateApp {
             .value_of(NUM_INTEROP_THREADS)
             .unwrap()
             .parse()
-            .or_exit("Cannot number of inter op threads", 1);
+            .context("Cannot number of inter op threads")?;
         let num_intraop_threads = matches
             .value_of(NUM_INTRAOP_THREADS)
             .unwrap()
             .parse()
-            .or_exit("Cannot number of intra op threads", 1);
+            .context("Cannot number of intra op threads")?;
         let max_len = matches
             .value_of(MAX_LEN)
-            .map(|v| v.parse().or_exit("Cannot parse maximum sentence length", 1));
+            .map(|v| v.parse().context("Cannot parse maximum sentence length"))
+            .transpose()?;
         let output = matches.value_of(OUTPUT).map(ToOwned::to_owned);
         let read_ahead = matches
             .value_of(READ_AHEAD)
             .unwrap()
             .parse()
-            .or_exit("Cannot parse number of batches to read ahead", 1);
+            .context("Cannot parse number of batches to read ahead")?;
 
-        AnnotateApp {
+        Ok(AnnotateApp {
             batch_size,
             config,
             device,
@@ -167,23 +177,23 @@ impl StickerApp for AnnotateApp {
             max_len,
             output,
             read_ahead,
-        }
+        })
     }
 
-    fn run(&self) {
+    fn run(&self) -> Result<()> {
         // Set number of PyTorch threads.
         tch::set_num_threads(self.num_intraop_threads as i32);
         tch::set_num_interop_threads(self.num_interop_threads as i32);
 
-        let model = Model::load(&self.config, self.device, true);
+        let model = Model::load(&self.config, self.device, true)?;
         let tagger = Tagger::new(self.device, model.model, model.encoders);
 
         let input = Input::from(self.input.as_ref());
-        let reader = Reader::new(input.buf_read().or_exit("Cannot open input for reading", 1));
+        let reader = Reader::new(input.buf_read().context("Cannot open input for reading")?);
 
         let output = Output::from(self.output.as_ref());
         let writer = Writer::new(BufWriter::new(
-            output.write().or_exit("Cannot open output for writing", 1),
+            output.write().context("Cannot open output for writing")?,
         ));
 
         self.process(&*model.tokenizer, tagger, reader, writer)

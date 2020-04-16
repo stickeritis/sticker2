@@ -1,11 +1,10 @@
 use std::collections::BTreeMap;
 use std::fs::File;
 
+use anyhow::{Context, Result};
 use clap::{App, Arg, ArgMatches};
-use failure::Fallible;
 use indicatif::ProgressStyle;
 use ordered_float::NotNan;
-use stdinout::OrExit;
 use sticker2::dataset::{ConlluDataSet, DataSet, SequenceLength};
 use sticker2::encoders::Encoders;
 use sticker2::input::Tokenize;
@@ -108,14 +107,14 @@ impl FinetuneApp {
         lr_schedulers: &mut LearningRateSchedules,
         global_step: &mut usize,
         epoch: usize,
-    ) -> Fallible<f32> {
+    ) -> Result<f32> {
         let epoch_type = if optimizer.is_some() {
             "train"
         } else {
             "validation"
         };
 
-        let read_progress = ReadProgress::new(file).or_exit("Cannot create progress bar", 1);
+        let read_progress = ReadProgress::new(file).context("Cannot create progress bar")?;
         let progress_bar = read_progress.progress_bar().clone();
         progress_bar.set_style(ProgressStyle::default_bar().template(&format!(
             "[Time: {{elapsed_precise}}, ETA: {{eta_precise}}] {{bar}} {{percent}}% {} {{msg}}",
@@ -376,7 +375,7 @@ impl StickerApp for FinetuneApp {
             )
     }
 
-    fn parse(matches: &ArgMatches) -> Self {
+    fn parse(matches: &ArgMatches) -> Result<Self> {
         let config = matches.value_of(CONFIG).unwrap().into();
         let pretrained_model = matches
             .value_of(PRETRAINED_MODEL)
@@ -391,12 +390,12 @@ impl StickerApp for FinetuneApp {
             .value_of(BATCH_SIZE)
             .unwrap()
             .parse()
-            .or_exit("Cannot parse batch size", 1);
+            .context("Cannot parse batch size")?;
         let continue_finetune = matches.is_present(CONTINUE);
         let device = match matches.value_of("GPU") {
             Some(gpu) => Device::Cuda(
                 gpu.parse()
-                    .or_exit(format!("Cannot parse GPU number ({})", gpu), 1),
+                    .context(format!("Cannot parse GPU number ({})", gpu))?,
             ),
             None => Device::Cpu,
         };
@@ -405,54 +404,61 @@ impl StickerApp for FinetuneApp {
             .value_of(INITIAL_LR_CLASSIFIER)
             .unwrap()
             .parse()
-            .or_exit("Cannot parse initial classifier learning rate", 1);
+            .context("Cannot parse initial classifier learning rate")?;
         let initial_lr_encoder = matches
             .value_of(INITIAL_LR_ENCODER)
             .unwrap()
             .parse()
-            .or_exit("Cannot parse initial encoder learning rate", 1);
-        let label_smoothing = matches.value_of(LABEL_SMOOTHING).map(|v| {
-            v.parse()
-                .or_exit("Cannot parse label smoothing probability", 1)
-        });
+            .context("Cannot parse initial encoder learning rate")?;
+        let label_smoothing = matches
+            .value_of(LABEL_SMOOTHING)
+            .map(|v| {
+                v.parse()
+                    .context(format!("Cannot parse label smoothing probability: {}", v))
+            })
+            .transpose()?;
         let max_len = matches
             .value_of(MAX_LEN)
-            .map(|v| v.parse().or_exit("Cannot parse maximum sentence length", 1))
+            .map(|v| {
+                v.parse()
+                    .context(format!("Cannot parse maximum sentence length: {}", v))
+            })
+            .transpose()?
             .map(SequenceLength::Pieces);
         let include_continuations = matches.is_present(INCLUDE_CONTINUATIONS);
         let lr_decay_rate = matches
             .value_of(LR_DECAY_RATE)
             .unwrap()
             .parse()
-            .or_exit("Cannot parse exponential decay rate", 1);
+            .context("Cannot parse exponential decay rate")?;
         let lr_patience = matches
             .value_of(LR_PATIENCE)
             .unwrap()
             .parse()
-            .or_exit("Cannot parse learning rate patience", 1);
+            .context("Cannot parse learning rate patience")?;
         let lr_scale = matches
             .value_of(LR_SCALE)
             .unwrap()
             .parse()
-            .or_exit("Cannot parse learning rate scale", 1);
+            .context("Cannot parse learning rate scale")?;
         let patience = matches
             .value_of(PATIENCE)
             .unwrap()
             .parse()
-            .or_exit("Cannot parse patience", 1);
+            .context("Cannot parse patience")?;
         let saver = BestEpochSaver::new("");
         let warmup_steps = matches
             .value_of(WARMUP)
             .unwrap()
             .parse()
-            .or_exit("Cannot parse warmup", 1);
+            .context("Cannot parse warmup")?;
         let weight_decay = matches
             .value_of(WEIGHT_DECAY)
             .unwrap()
             .parse()
-            .or_exit("Cannot parse weight decay", 1);
+            .context("Cannot parse weight decay")?;
 
-        FinetuneApp {
+        Ok(FinetuneApp {
             batch_size,
             config,
             continue_finetune,
@@ -475,19 +481,22 @@ impl StickerApp for FinetuneApp {
             train_data,
             validation_data,
             weight_decay,
-        }
+        })
     }
 
-    fn run(&self) {
+    fn run(&self) -> Result<()> {
         let model = if self.continue_finetune {
-            Model::load_from(&self.config, &self.pretrained_model, self.device, false)
+            Model::load_from(&self.config, &self.pretrained_model, self.device, false)?
         } else {
-            Model::load_from_hdf5(&self.config, &self.pretrained_model, self.device)
+            Model::load_from_hdf5(&self.config, &self.pretrained_model, self.device)?
         };
 
-        let mut train_file = File::open(&self.train_data).or_exit("Cannot open train data file", 1);
-        let mut validation_file =
-            File::open(&self.validation_data).or_exit("Cannot open validation data file", 1);
+        let mut train_file = File::open(&self.train_data)
+            .context(format!("Cannot open train data file: {}", self.train_data))?;
+        let mut validation_file = File::open(&self.validation_data).context(format!(
+            "Cannot open validation data file: {}",
+            self.validation_data
+        ))?;
 
         let mut saver = self.saver.clone();
         let mut opt = AdamW::new(&model.vs);
@@ -520,7 +529,7 @@ impl StickerApp for FinetuneApp {
                 &mut global_step,
                 epoch,
             )
-            .or_exit("Cannot run train epoch", 1);
+            .context("Cannot run train epoch")?;
 
             last_acc = self
                 .run_epoch(
@@ -533,7 +542,7 @@ impl StickerApp for FinetuneApp {
                     &mut global_step,
                     epoch,
                 )
-                .or_exit("Cannot run valdidation epoch", 1);
+                .context("Cannot run valdidation epoch")?;
 
             if last_acc > best_acc {
                 best_epoch = epoch;
@@ -542,7 +551,7 @@ impl StickerApp for FinetuneApp {
 
             saver
                 .save(&model.vs, CompletedUnit::Epoch(last_acc))
-                .or_exit("Error saving model", 1);
+                .context("Error saving model")?;
 
             let epoch_status = if best_epoch == epoch { "🎉" } else { "" };
             eprintln!(
@@ -558,5 +567,7 @@ impl StickerApp for FinetuneApp {
                 break;
             }
         }
+
+        Ok(())
     }
 }
