@@ -1,6 +1,6 @@
 use std::marker::PhantomData;
 
-use failure::{Fallible, ResultExt};
+use anyhow::{Context, Result};
 use tch::nn::VarStore;
 
 #[derive(Copy, Clone, Eq, PartialEq)]
@@ -29,7 +29,7 @@ pub trait Save<P> {
     /// as larger. If smaller is better in a performance measure, the
     /// actual measure can be wrapped in `std::cmp::Reverse` to
     /// reverse the ordering.
-    fn save(&mut self, vs: &VarStore, completed: CompletedUnit<P>) -> Fallible<()>;
+    fn save(&mut self, vs: &VarStore, completed: CompletedUnit<P>) -> Result<()>;
 }
 
 /// Save epochs.
@@ -51,9 +51,10 @@ impl<P> EpochSaver<P> {
 }
 
 impl<P> Save<P> for EpochSaver<P> {
-    fn save(&mut self, vs: &VarStore, completed: CompletedUnit<P>) -> Fallible<()> {
+    fn save(&mut self, vs: &VarStore, completed: CompletedUnit<P>) -> Result<()> {
         if let CompletedUnit::Epoch(_) = completed {
             vs.save(format!("{}epoch-{}", self.prefix, self.epoch))
+                .map_err(|err| err.compat())
                 .context(format!(
                     "Cannot save variable store for epoch {}",
                     self.epoch
@@ -87,7 +88,7 @@ impl<P> Save<P> for BestEpochSaver<P>
 where
     P: PartialOrd,
 {
-    fn save(&mut self, vs: &VarStore, completed: CompletedUnit<P>) -> Fallible<()> {
+    fn save(&mut self, vs: &VarStore, completed: CompletedUnit<P>) -> Result<()> {
         if let CompletedUnit::Epoch(perf) = completed {
             let improvement = match self.best_epoch_performance {
                 Some(ref mut best) => {
@@ -106,6 +107,7 @@ where
 
             if improvement {
                 vs.save(format!("{}epoch-{}", self.prefix, self.epoch))
+                    .map_err(|err| err.compat())
                     .context(format!(
                         "Cannot save variable store for epoch {}",
                         self.epoch
@@ -145,10 +147,11 @@ impl<P> EpochAndBatchesSaver<P> {
 }
 
 impl<P> Save<P> for EpochAndBatchesSaver<P> {
-    fn save(&mut self, vs: &VarStore, completed: CompletedUnit<P>) -> Fallible<()> {
+    fn save(&mut self, vs: &VarStore, completed: CompletedUnit<P>) -> Result<()> {
         match completed {
             CompletedUnit::Epoch(_) => {
                 vs.save(format!("{}epoch-{}", self.prefix, self.epoch))
+                    .map_err(|err| err.compat())
                     .context(format!(
                         "Cannot save variable store for epoch {}",
                         self.epoch
@@ -163,6 +166,7 @@ impl<P> Save<P> for EpochAndBatchesSaver<P> {
                         "{}epoch-{}-batch-{}",
                         self.prefix, self.epoch, self.epoch_batch
                     ))
+                    .map_err(|err| err.compat())
                     .context(format!(
                         "Cannot save variable store for epoch {} batch {}",
                         self.epoch, self.batch

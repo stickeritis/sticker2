@@ -3,9 +3,9 @@ use std::net::{TcpListener, TcpStream};
 use std::ops::Deref;
 use std::sync::Arc;
 
+use anyhow::{Context, Result};
 use clap::{App, Arg, ArgMatches};
 use conllu::io::{ReadSentence, Reader, Writer};
-use stdinout::OrExit;
 use sticker2::input::Tokenize;
 use sticker2::tagger::Tagger;
 use tch::{self, Device};
@@ -131,35 +131,37 @@ impl StickerApp for ServerApp {
             )
     }
 
-    fn parse(matches: &ArgMatches) -> Self {
+    fn parse(matches: &ArgMatches) -> Result<Self> {
         let batch_size = matches
             .value_of(BATCH_SIZE)
             .unwrap()
             .parse()
-            .or_exit("Cannot parse batch size", 1);
+            .context("Cannot parse batch size")?;
         let config = matches.value_of(CONFIG).unwrap().to_owned();
         let device = match matches.value_of("GPU") {
             Some(gpu) => Device::Cuda(
                 gpu.parse()
-                    .or_exit(format!("Cannot parse GPU number ({})", gpu), 1),
+                    .context(format!("Cannot parse GPU number ({})", gpu))?,
             ),
             None => Device::Cpu,
         };
         let addr = matches.value_of(ADDR).unwrap().into();
         let max_len = matches
             .value_of(MAX_LEN)
-            .map(|v| v.parse().or_exit("Cannot parse maximum sentence length", 1));
+            .map(|v| v.parse().context("Cannot parse maximum sentence length"))
+            .transpose()?;
         let n_threads = matches
             .value_of(THREADS)
-            .map(|v| v.parse().or_exit("Cannot parse number of threads", 1))
+            .map(|v| v.parse().context("Cannot parse number of threads"))
+            .transpose()?
             .unwrap();
         let read_ahead = matches
             .value_of(READ_AHEAD)
             .unwrap()
             .parse()
-            .or_exit("Cannot parse number of batches to read ahead", 1);
+            .context("Cannot parse number of batches to read ahead")?;
 
-        ServerApp {
+        Ok(ServerApp {
             batch_size,
             addr,
             config,
@@ -167,11 +169,11 @@ impl StickerApp for ServerApp {
             max_len,
             n_threads,
             read_ahead,
-        }
+        })
     }
 
-    fn run(&self) {
-        let model = Model::load(&self.config, self.device, true);
+    fn run(&self) -> Result<()> {
+        let model = Model::load(&self.config, self.device, true)?;
         let tagger = Tagger::new(self.device, model.model, model.encoders);
 
         let pool = ThreadPool::new(self.n_threads);
@@ -188,14 +190,14 @@ impl StickerApp for ServerApp {
         tch::set_num_interop_threads(self.n_threads as i32);
 
         let listener =
-            TcpListener::bind(&self.addr).or_exit(format!("Cannot listen on '{}'", self.addr), 1);
+            TcpListener::bind(&self.addr).context(format!("Cannot listen on '{}'", self.addr))?;
 
-        self.serve(
+        Ok(self.serve(
             Arc::from(model.tokenizer),
             Arc::new(TaggerWrap(tagger)),
             pool,
             listener,
-        );
+        ))
     }
 }
 

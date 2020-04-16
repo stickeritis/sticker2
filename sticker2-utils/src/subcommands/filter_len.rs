@@ -1,8 +1,9 @@
 use std::io::BufWriter;
 
+use anyhow::{Context, Result};
 use clap::{App, Arg, ArgMatches};
 use conllu::io::{ReadSentence, Reader, WriteSentence, Writer};
-use stdinout::{Input, OrExit, Output};
+use stdinout::{Input, Output};
 
 use crate::io::{load_config, load_tokenizer};
 use crate::traits::{StickerApp, DEFAULT_CLAP_SETTINGS};
@@ -40,28 +41,28 @@ impl StickerApp for FilterLenApp {
             .arg(Arg::with_name(OUTPUT).help("Output corpus").index(4))
     }
 
-    fn parse(matches: &ArgMatches) -> Self {
+    fn parse(matches: &ArgMatches) -> Result<Self> {
         let config = matches.value_of(CONFIG).unwrap().into();
         let max_len = matches
             .value_of(MAX_LEN)
             .unwrap()
             .parse()
-            .or_exit("Cannot parse maximum sentence length", 1);
+            .context("Cannot parse maximum sentence length")?;
         let input = matches.value_of(INPUT).map(ToOwned::to_owned);
         let output = matches.value_of(OUTPUT).map(ToOwned::to_owned);
 
-        FilterLenApp {
+        Ok(FilterLenApp {
             config,
             max_len,
             input,
             output,
-        }
+        })
     }
 
-    fn run(&self) {
-        let config = load_config(&self.config);
+    fn run(&self) -> Result<()> {
+        let config = load_config(&self.config)?;
 
-        let tokenizer = load_tokenizer(&config);
+        let tokenizer = load_tokenizer(&config)?;
 
         let input = Input::from(self.input.as_ref());
         let output = Output::from(self.output.as_ref());
@@ -69,23 +70,25 @@ impl StickerApp for FilterLenApp {
         let treebank_reader = Reader::new(
             input
                 .buf_read()
-                .or_exit("Cannot open corpus for reading", 1),
+                .context("Cannot open treebank for reading")?,
         );
 
         let mut treebank_writer = Writer::new(BufWriter::new(
-            output.write().or_exit("Cannot open corpus for writing", 1),
+            output.write().context("Cannot open treebank for writing")?,
         ));
 
         for sentence in treebank_reader.sentences() {
-            let sentence = sentence.or_exit("Cannot read sentence from treebank", 1);
+            let sentence = sentence.context("Cannot read sentence from treebank")?;
 
             let sentence_with_pieces = tokenizer.tokenize(sentence);
 
             if sentence_with_pieces.pieces.len() <= self.max_len {
                 treebank_writer
                     .write_sentence(&sentence_with_pieces.sentence)
-                    .or_exit("Cannot write sentence", 1);
+                    .context("Cannot write sentence")?;
             }
         }
+
+        Ok(())
     }
 }

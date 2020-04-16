@@ -1,6 +1,6 @@
+use anyhow::Result;
 use conllu::graph::Sentence;
 use conllu::io::WriteSentence;
-use failure::Fallible;
 
 use sticker2::input::{SentenceWithPieces, Tokenize};
 use sticker2::tagger::Tagger;
@@ -54,7 +54,7 @@ where
     }
 
     /// Process a sentence.
-    pub fn process(&mut self, sent: Sentence) -> Fallible<()> {
+    pub fn process(&mut self, sent: Sentence) -> Result<()> {
         let tokenized_sentence = self.tokenizer.tokenize(sent);
 
         if let Some(max_len) = self.max_len {
@@ -74,7 +74,7 @@ where
         Ok(())
     }
 
-    fn tag_buffered_sentences(&mut self) -> Fallible<()> {
+    fn tag_buffered_sentences(&mut self) -> Result<()> {
         // Sort sentences by length.
         let mut sent_refs: Vec<_> = self.buffer.iter_mut().map(|s| s).collect();
         sent_refs.sort_unstable_by_key(|s| s.pieces.len());

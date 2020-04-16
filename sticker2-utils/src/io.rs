@@ -1,6 +1,6 @@
 use std::fs::File;
 
-use stdinout::OrExit;
+use anyhow::{Context, Result};
 use sticker2::config::{Config, PretrainConfig, TomlRead};
 use sticker2::encoders::Encoders;
 use sticker2::input::Tokenize;
@@ -21,8 +21,8 @@ impl Model {
     ///
     /// If `freeze` is true, gradient computation is disabled for the
     /// model parameters.
-    pub fn load(config_path: &str, device: Device, freeze: bool) -> Self {
-        let config = load_config(config_path);
+    pub fn load(config_path: &str, device: Device, freeze: bool) -> Result<Self> {
+        let config = load_config(config_path)?;
         Self::load_from(config_path, &config.model.parameters, device, freeze)
     }
 
@@ -39,11 +39,11 @@ impl Model {
         parameters_path: &str,
         device: Device,
         freeze: bool,
-    ) -> Model {
-        let config = load_config(config_path);
-        let encoders = load_encoders(&config);
-        let tokenizer = load_tokenizer(&config);
-        let pretrain_config = load_pretrain_config(&config);
+    ) -> Result<Model> {
+        let config = load_config(config_path)?;
+        let encoders = load_encoders(&config)?;
+        let tokenizer = load_tokenizer(&config)?;
+        let pretrain_config = load_pretrain_config(&config)?;
 
         let mut vs = VarStore::new(device);
 
@@ -54,21 +54,22 @@ impl Model {
             0.0,
             config.model.position_embeddings,
         )
-        .or_exit("Cannot construct model", 1);
+        .context("Cannot construct model")?;
 
         vs.load(parameters_path)
-            .or_exit("Cannot load model parameters", 1);
+            .map_err(|err| err.compat())
+            .context("Cannot load model parameters")?;
 
         if freeze {
             vs.freeze();
         }
 
-        Model {
+        Ok(Model {
             encoders,
             model,
             tokenizer,
             vs,
-        }
+        })
     }
 
     /// Load a model on the given device.
@@ -77,63 +78,59 @@ impl Model {
     /// specified in the configuration file, but the parameters from
     /// the HDF5 file at `hdf5_path`.
     #[cfg(feature = "load-hdf5")]
-    pub fn load_from_hdf5(config_path: &str, hdf5_path: &str, device: Device) -> Model {
-        let config = load_config(config_path);
-        let encoders = load_encoders(&config);
-        let tokenizer = load_tokenizer(&config);
-        let pretrain_config = load_pretrain_config(&config);
+    pub fn load_from_hdf5(config_path: &str, hdf5_path: &str, device: Device) -> Result<Model> {
+        let config = load_config(config_path)?;
+        let encoders = load_encoders(&config)?;
+        let tokenizer = load_tokenizer(&config)?;
+        let pretrain_config = load_pretrain_config(&config)?;
 
         let vs = VarStore::new(device);
 
         let model =
             BertModel::from_pretrained(vs.root(), &pretrain_config, hdf5_path, &encoders, 0.5)
-                .or_exit("Cannot load pretrained model parameters", 1);
+                .context("Cannot load pretrained model parameters")?;
 
-        Model {
+        Ok(Model {
             encoders,
             model,
             tokenizer,
             vs,
-        }
+        })
     }
 
     #[cfg(not(feature = "load-hdf5"))]
-    pub fn load_from_hdf5(_config_path: &str, _hdf5_path: &str, _device: Device) -> Model {
-        eprintln!("Cannot load HDF5 model: sticker2 was compiled without support for HDF5");
-        std::process::exit(1);
+    pub fn load_from_hdf5(_config_path: &str, _hdf5_path: &str, _device: Device) -> Result<Model> {
+        anyhow::bail!("Cannot load HDF5 model: sticker2 was compiled without support for HDF5");
     }
 }
 
-pub fn load_pretrain_config(config: &Config) -> PretrainConfig {
+pub fn load_pretrain_config(config: &Config) -> Result<PretrainConfig> {
     config
         .model
         .pretrain_config()
-        .or_exit("Cannot load pretraining model configuration", 1)
+        .context("Cannot load pretraining model configuration")
 }
 
-pub fn load_config(config_path: &str) -> Config {
-    let config_file = File::open(config_path).or_exit(
-        format!("Cannot open configuration file '{}'", &config_path),
-        1,
-    );
-    let mut config = Config::from_toml_read(config_file).or_exit(
-        format!("Cannot parse configuration file: {}", config_path),
-        1,
-    );
-    config.relativize_paths(config_path).or_exit(
-        format!(
-            "Cannot relativize paths in configuration file: {}",
-            config_path
-        ),
-        1,
-    );
+pub fn load_config(config_path: &str) -> Result<Config> {
+    let config_file = File::open(config_path)
+        .context(format!("Cannot open configuration file '{}'", &config_path))?;
+    let mut config = Config::from_toml_read(config_file)
+        .context(format!("Cannot parse configuration file: {}", config_path))?;
+    config.relativize_paths(config_path).context(format!(
+        "Cannot relativize paths in configuration file: {}",
+        config_path
+    ))?;
 
-    config
+    Ok(config)
 }
 
-fn load_encoders(config: &Config) -> Encoders {
-    let f = File::open(&config.labeler.labels).or_exit("Cannot open label file", 1);
-    let encoders: Encoders = serde_yaml::from_reader(&f).or_exit("Cannot deserialize labels", 1);
+fn load_encoders(config: &Config) -> Result<Encoders> {
+    let f = File::open(&config.labeler.labels)
+        .context(format!("Cannot open label file: {}", config.labeler.labels))?;
+    let encoders: Encoders = serde_yaml::from_reader(&f).context(format!(
+        "Cannot deserialize labels from: {}",
+        config.labeler.labels
+    ))?;
 
     for encoder in &*encoders {
         eprintln!(
@@ -143,11 +140,11 @@ fn load_encoders(config: &Config) -> Encoders {
         );
     }
 
-    encoders
+    Ok(encoders)
 }
 
-pub fn load_tokenizer(config: &Config) -> Box<dyn Tokenize> {
+pub fn load_tokenizer(config: &Config) -> Result<Box<dyn Tokenize>> {
     config
         .tokenizer()
-        .or_exit("Cannot read tokenizer vocabulary", 1)
+        .context("Cannot read tokenizer vocabulary")
 }

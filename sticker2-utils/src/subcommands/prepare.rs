@@ -1,11 +1,11 @@
 use std::fs::File;
 use std::io::{BufReader, Write};
 
+use anyhow::{Context, Result};
 use clap::{App, Arg, ArgMatches};
 use conllu::io::{ReadSentence, Reader};
 use indicatif::ProgressStyle;
 use serde_yaml;
-use stdinout::OrExit;
 use sticker2::config::Config;
 use sticker2::encoders::Encoders;
 use sticker_encoders::SentenceEncoder;
@@ -23,12 +23,15 @@ pub struct PrepareApp {
 }
 
 impl PrepareApp {
-    fn write_labels(config: &Config, encoders: &Encoders) {
-        let mut f = File::create(&config.labeler.labels).or_exit("Cannot create label file", 1);
+    fn write_labels(config: &Config, encoders: &Encoders) -> Result<()> {
+        let mut f = File::create(&config.labeler.labels).context(format!(
+            "Cannot create label file: {}",
+            config.labeler.labels
+        ))?;
         let serialized_labels =
-            serde_yaml::to_string(&encoders).or_exit("Cannot serialize labels", 1);
+            serde_yaml::to_string(&encoders).context("Cannot serialize labels")?;
         f.write_all(serialized_labels.as_bytes())
-            .or_exit("Cannot write labels", 1);
+            .context("Cannot write labels")
     }
 }
 
@@ -51,20 +54,21 @@ impl StickerApp for PrepareApp {
             )
     }
 
-    fn parse(matches: &ArgMatches) -> Self {
+    fn parse(matches: &ArgMatches) -> Result<Self> {
         let config = matches.value_of(CONFIG).unwrap().into();
         let train_data = matches.value_of(TRAIN_DATA).unwrap().into();
 
-        PrepareApp { config, train_data }
+        Ok(PrepareApp { config, train_data })
     }
 
-    fn run(&self) {
-        let config = load_config(&self.config);
+    fn run(&self) -> Result<()> {
+        let config = load_config(&self.config)?;
 
         let encoders: Encoders = (&config.labeler.encoders).into();
 
-        let train_file = File::open(&self.train_data).or_exit("Cannot open train data file", 1);
-        let read_progress = ReadProgress::new(train_file).or_exit("Cannot create progress bar", 1);
+        let train_file = File::open(&self.train_data)
+            .context(format!("Cannot open train data file: {}", self.train_data))?;
+        let read_progress = ReadProgress::new(train_file).context("Cannot create progress bar")?;
         let progress_bar = read_progress.progress_bar().clone();
         progress_bar.set_style(
             ProgressStyle::default_bar()
@@ -74,16 +78,16 @@ impl StickerApp for PrepareApp {
         let treebank_reader = Reader::new(BufReader::new(read_progress));
 
         for sentence in treebank_reader.sentences() {
-            let sentence = sentence.or_exit("Cannot read sentence from treebank", 1);
+            let sentence = sentence.context("Cannot read sentence from treebank")?;
 
             for encoder in &*encoders {
-                encoder.encoder().encode(&sentence).or_exit(
-                    format!("Cannot encode sentence with encoder {}", encoder.name()),
-                    1,
-                );
+                encoder.encoder().encode(&sentence).context(format!(
+                    "Cannot encode sentence with encoder {}",
+                    encoder.name()
+                ))?;
             }
         }
 
-        Self::write_labels(&config, &encoders);
+        Self::write_labels(&config, &encoders)
     }
 }

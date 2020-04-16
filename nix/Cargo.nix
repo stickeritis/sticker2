@@ -26,9 +26,9 @@ rec {
   # workspaceMembers."${crateName}".build.override { features = [ "default" "feature1" ... ]; }.
   workspaceMembers = {
     "sticker2" = rec {
-      packageId = "sticker2 0.2.0 (path+file:///home/daniel/git/sticker2/sticker2)";
+      packageId = "sticker2 0.2.0 (path+file:///Users/daniel/git/sticker2/sticker2)";
       build = internal.buildRustCrateWithFeatures {
-        packageId = "sticker2 0.2.0 (path+file:///home/daniel/git/sticker2/sticker2)";
+        packageId = "sticker2 0.2.0 (path+file:///Users/daniel/git/sticker2/sticker2)";
       };
 
       # Debug support which might change between releases.
@@ -36,9 +36,9 @@ rec {
       debug = internal.debugCrate { inherit packageId; };
     };
     "sticker2-utils" = rec {
-      packageId = "sticker2-utils 0.2.0 (path+file:///home/daniel/git/sticker2/sticker2-utils)";
+      packageId = "sticker2-utils 0.2.0 (path+file:///Users/daniel/git/sticker2/sticker2-utils)";
       build = internal.buildRustCrateWithFeatures {
-        packageId = "sticker2-utils 0.2.0 (path+file:///home/daniel/git/sticker2/sticker2-utils)";
+        packageId = "sticker2-utils 0.2.0 (path+file:///Users/daniel/git/sticker2/sticker2-utils)";
       };
 
       # Debug support which might change between releases.
@@ -600,26 +600,26 @@ rec {
         ];
         
       };
-      "conllu 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)" = rec {
+      "conllu 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)" = rec {
         crateName = "conllu";
-        version = "0.3.0";
+        version = "0.5.0";
         edition = "2018";
-        sha256 = "1fb48n74qqj9p48igfxqv2xn9x5icn199b4fjj9c4v5mn3amvvlx";
+        sha256 = "01jkdjy83w46f7v9apsiqfknfqxd160g38zn1sbbbkasvr8bylan";
         authors = [
           "Daniël de Kok <me@danieldk.eu>"
         ];
         dependencies = [
           {
-            name = "failure";
-            packageId = "failure 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)";
-          }
-          {
             name = "itertools";
-            packageId = "itertools 0.8.2 (registry+https://github.com/rust-lang/crates.io-index)";
+            packageId = "itertools 0.9.0 (registry+https://github.com/rust-lang/crates.io-index)";
           }
           {
             name = "petgraph";
-            packageId = "petgraph 0.4.13 (registry+https://github.com/rust-lang/crates.io-index)";
+            packageId = "petgraph 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)";
+          }
+          {
+            name = "thiserror";
+            packageId = "thiserror 1.0.15 (registry+https://github.com/rust-lang/crates.io-index)";
           }
         ];
         
@@ -1251,15 +1251,17 @@ rec {
         features = {
         };
       };
-      "fixedbitset 0.1.9 (registry+https://github.com/rust-lang/crates.io-index)" = rec {
+      "fixedbitset 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = rec {
         crateName = "fixedbitset";
-        version = "0.1.9";
+        version = "0.2.0";
         edition = "2015";
-        sha256 = "0czam11mi80dbyhf4rd4lz0ihcf7vkfchrdcrn45wbs0h40dxm46";
+        sha256 = "0kg03p777wc0dajd9pvlcnsyrwa8dhqwf0sd9r4dw0p82rs39arp";
         authors = [
           "bluss"
         ];
-        
+        features = {
+          "default" = [ "std" ];
+        };
       };
       "flate2 1.0.13 (registry+https://github.com/rust-lang/crates.io-index)" = rec {
         crateName = "flate2";
@@ -1565,6 +1567,25 @@ rec {
         };
         resolvedDefaultFeatures = [ "default" ];
       };
+      "indexmap 1.3.2 (registry+https://github.com/rust-lang/crates.io-index)" = rec {
+        crateName = "indexmap";
+        version = "1.3.2";
+        edition = "2015";
+        sha256 = "14i2gmq9pwaafvlxmsc12j6539hjgqk4j4jz40fz763vbcn08vq7";
+        authors = [
+          "bluss"
+          "Josh Stone <cuviper@gmail.com>"
+        ];
+        buildDependencies = [
+          {
+            name = "autocfg";
+            packageId = "autocfg 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)";
+          }
+        ];
+        features = {
+          "serde-1" = [ "serde" ];
+        };
+      };
       "indicatif 0.13.0 (registry+https://github.com/rust-lang/crates.io-index)" = rec {
         crateName = "indicatif";
         version = "0.13.0";
@@ -1622,6 +1643,26 @@ rec {
         version = "0.8.2";
         edition = "2015";
         sha256 = "1154j48aw913v5jnyhpxialxhdn2sfpl4d7bwididyb1r05jsspm";
+        authors = [
+          "bluss"
+        ];
+        dependencies = [
+          {
+            name = "either";
+            packageId = "either 1.5.3 (registry+https://github.com/rust-lang/crates.io-index)";
+            usesDefaultFeatures = false;
+          }
+        ];
+        features = {
+          "default" = [ "use_std" ];
+        };
+        resolvedDefaultFeatures = [ "default" "use_std" ];
+      };
+      "itertools 0.9.0 (registry+https://github.com/rust-lang/crates.io-index)" = rec {
+        crateName = "itertools";
+        version = "0.9.0";
+        edition = "2018";
+        sha256 = "0jyml7ygr7kijkcjdl3fk5f34y5h5jsavclim7l13zjiavw1hkr8";
         authors = [
           "bluss"
         ];
@@ -2311,18 +2352,6 @@ rec {
         };
         resolvedDefaultFeatures = [ "default" "serde" "std" ];
       };
-      "ordermap 0.3.5 (registry+https://github.com/rust-lang/crates.io-index)" = rec {
-        crateName = "ordermap";
-        version = "0.3.5";
-        edition = "2015";
-        sha256 = "0qr0a50l0qakbjcck93qdayd0xl8gzpp42x0n7b75cs4ybsx6vm8";
-        authors = [
-          "bluss"
-        ];
-        features = {
-          "serde-1" = [ "serde" ];
-        };
-      };
       "parking_lot 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)" = rec {
         crateName = "parking_lot";
         version = "0.8.0";
@@ -2408,11 +2437,11 @@ rec {
           "deadlock_detection" = [ "petgraph" "thread-id" "backtrace" ];
         };
       };
-      "petgraph 0.4.13 (registry+https://github.com/rust-lang/crates.io-index)" = rec {
+      "petgraph 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)" = rec {
         crateName = "petgraph";
-        version = "0.4.13";
-        edition = "2015";
-        sha256 = "0kyfmca854s54jk26g2x1kjb04c3k7cjilaxyr0if8lhxv8mjdlw";
+        version = "0.5.0";
+        edition = "2018";
+        sha256 = "14pxq66civ0afgj0zlza9k3kxwqk2bf5jg0mbp4cd7m2lkp2gh99";
         authors = [
           "bluss"
           "mitchmindtree"
@@ -2420,22 +2449,21 @@ rec {
         dependencies = [
           {
             name = "fixedbitset";
-            packageId = "fixedbitset 0.1.9 (registry+https://github.com/rust-lang/crates.io-index)";
+            packageId = "fixedbitset 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)";
+            usesDefaultFeatures = false;
           }
           {
-            name = "ordermap";
-            packageId = "ordermap 0.3.5 (registry+https://github.com/rust-lang/crates.io-index)";
-            optional = true;
+            name = "indexmap";
+            packageId = "indexmap 1.3.2 (registry+https://github.com/rust-lang/crates.io-index)";
           }
         ];
         features = {
-          "all" = [ "unstable" "quickcheck" "stable_graph" "graphmap" ];
-          "default" = [ "graphmap" "stable_graph" ];
-          "graphmap" = [ "ordermap" ];
+          "all" = [ "unstable" "quickcheck" "matrix_graph" "stable_graph" "graphmap" ];
+          "default" = [ "graphmap" "stable_graph" "matrix_graph" ];
           "serde-1" = [ "serde" "serde_derive" ];
           "unstable" = [ "generate" ];
         };
-        resolvedDefaultFeatures = [ "default" "graphmap" "ordermap" "stable_graph" ];
+        resolvedDefaultFeatures = [ "default" "graphmap" "matrix_graph" "stable_graph" ];
       };
       "pkg-config 0.3.17 (registry+https://github.com/rust-lang/crates.io-index)" = rec {
         crateName = "pkg-config";
@@ -3395,19 +3423,15 @@ rec {
         ];
         
       };
-      "sentencepiece 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)" = rec {
+      "sentencepiece 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = rec {
         crateName = "sentencepiece";
-        version = "0.1.3";
+        version = "0.2.0";
         edition = "2018";
-        sha256 = "0f0d3wlq2pjp1mpj20w47fngzwq5p4v6lmlf9hprla1qc02c1vji";
+        sha256 = "0yi98k6nkbcp2myi0i6jwi6bbcrb4wsvsrrdxhf7vlsk1bvw70l2";
         authors = [
           "Daniël de Kok <me@danieldk.eu>"
         ];
         dependencies = [
-          {
-            name = "failure";
-            packageId = "failure 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)";
-          }
           {
             name = "libc";
             packageId = "libc 0.2.66 (registry+https://github.com/rust-lang/crates.io-index)";
@@ -3426,18 +3450,22 @@ rec {
           }
           {
             name = "sentencepiece-sys";
-            packageId = "sentencepiece-sys 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)";
+            packageId = "sentencepiece-sys 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)";
+          }
+          {
+            name = "thiserror";
+            packageId = "thiserror 1.0.15 (registry+https://github.com/rust-lang/crates.io-index)";
           }
         ];
         features = {
           "proto-compile" = [ "protoc-rust" ];
         };
       };
-      "sentencepiece-sys 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)" = rec {
+      "sentencepiece-sys 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = rec {
         crateName = "sentencepiece-sys";
-        version = "0.1.3";
+        version = "0.2.0";
         edition = "2018";
-        sha256 = "190hbwcypa8ji09jkm1wigwwm1z7nsjbqnmyiqm0kcy6zbvzzmmy";
+        sha256 = "07izfl1jzwcx16c5szhshlmqbn1vbyafhlm6dmx0i55z6j53fkwr";
         authors = [
           "Daniël de Kok <me@danieldk.eu>"
         ];
@@ -3655,26 +3683,22 @@ rec {
         ];
         
       };
-      "sticker-encoders 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)" = rec {
+      "sticker-encoders 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)" = rec {
         crateName = "sticker-encoders";
-        version = "0.3.2";
+        version = "0.5.0";
         edition = "2018";
-        sha256 = "1fbksi5lm3zcq3zlg3gq97zd43y8k5r1y5fvlv0vshiafb4kdfrz";
+        sha256 = "1s9ddx6dirdqfy589f96jx9353hyyh1sb321n4xq460sdiz2m5kv";
         authors = [
           "Daniël de Kok <me@danieldk.eu>"
         ];
         dependencies = [
           {
             name = "conllu";
-            packageId = "conllu 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)";
+            packageId = "conllu 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)";
           }
           {
             name = "edit_tree";
             packageId = "edit_tree 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)";
-          }
-          {
-            name = "failure";
-            packageId = "failure 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)";
           }
           {
             name = "numberer";
@@ -3686,7 +3710,7 @@ rec {
           }
           {
             name = "petgraph";
-            packageId = "petgraph 0.4.13 (registry+https://github.com/rust-lang/crates.io-index)";
+            packageId = "petgraph 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)";
           }
           {
             name = "serde";
@@ -3695,6 +3719,10 @@ rec {
           {
             name = "serde_derive";
             packageId = "serde_derive 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)";
+          }
+          {
+            name = "thiserror";
+            packageId = "thiserror 1.0.15 (registry+https://github.com/rust-lang/crates.io-index)";
           }
         ];
         
@@ -3733,7 +3761,41 @@ rec {
         };
         resolvedDefaultFeatures = [ "hdf5" "load-hdf5" ];
       };
-      "sticker2 0.2.0 (path+file:///home/daniel/git/sticker2/sticker2)" = rec {
+      "sticker-transformers 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)" = rec {
+        crateName = "sticker-transformers";
+        version = "0.6.0";
+        edition = "2018";
+        sha256 = "1l1695xwqp3nizlfr135jghay2s7696z3qpc5hh0cs8m8gckkzp3";
+        authors = [
+          "Daniël de Kok <me@danieldk.eu>"
+        ];
+        dependencies = [
+          {
+            name = "hdf5";
+            packageId = "hdf5 0.5.2 (registry+https://github.com/rust-lang/crates.io-index)";
+            optional = true;
+          }
+          {
+            name = "serde";
+            packageId = "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)";
+            features = [ "derive" ];
+          }
+          {
+            name = "tch";
+            packageId = "tch 0.1.6 (git+https://github.com/LaurentMazare/tch-rs.git?rev=c631fc4b8bb2#c631fc4b8bb22df1e10e2c1468e6302ffec8c870)";
+          }
+          {
+            name = "thiserror";
+            packageId = "thiserror 1.0.15 (registry+https://github.com/rust-lang/crates.io-index)";
+          }
+        ];
+        features = {
+          "default" = [ "load-hdf5" ];
+          "load-hdf5" = [ "hdf5" ];
+        };
+        resolvedDefaultFeatures = [ "hdf5" "load-hdf5" ];
+      };
+      "sticker2 0.2.0 (path+file:///Users/daniel/git/sticker2/sticker2)" = rec {
         crateName = "sticker2";
         version = "0.2.0";
         edition = "2018";
@@ -3743,16 +3805,16 @@ rec {
         ];
         dependencies = [
           {
+            name = "anyhow";
+            packageId = "anyhow 1.0.26 (registry+https://github.com/rust-lang/crates.io-index)";
+          }
+          {
             name = "conllu";
-            packageId = "conllu 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)";
+            packageId = "conllu 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)";
           }
           {
             name = "edit_tree";
             packageId = "edit_tree 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)";
-          }
-          {
-            name = "failure";
-            packageId = "failure 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)";
           }
           {
             name = "hdf5";
@@ -3780,7 +3842,7 @@ rec {
           }
           {
             name = "sentencepiece";
-            packageId = "sentencepiece 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)";
+            packageId = "sentencepiece 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)";
           }
           {
             name = "serde";
@@ -3793,11 +3855,11 @@ rec {
           }
           {
             name = "sticker-encoders";
-            packageId = "sticker-encoders 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)";
+            packageId = "sticker-encoders 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)";
           }
           {
             name = "sticker-transformers";
-            packageId = "sticker-transformers 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)";
+            packageId = "sticker-transformers 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)";
             usesDefaultFeatures = false;
           }
           {
@@ -3805,12 +3867,16 @@ rec {
             packageId = "tch 0.1.6 (git+https://github.com/LaurentMazare/tch-rs.git?rev=c631fc4b8bb2#c631fc4b8bb22df1e10e2c1468e6302ffec8c870)";
           }
           {
+            name = "thiserror";
+            packageId = "thiserror 1.0.15 (registry+https://github.com/rust-lang/crates.io-index)";
+          }
+          {
             name = "toml";
             packageId = "toml 0.5.6 (registry+https://github.com/rust-lang/crates.io-index)";
           }
           {
             name = "wordpieces";
-            packageId = "wordpieces 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)";
+            packageId = "wordpieces 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)";
           }
         ];
         devDependencies = [
@@ -3837,7 +3903,7 @@ rec {
         };
         resolvedDefaultFeatures = [ "default" "load-hdf5" "model-tests" ];
       };
-      "sticker2-utils 0.2.0 (path+file:///home/daniel/git/sticker2/sticker2-utils)" = rec {
+      "sticker2-utils 0.2.0 (path+file:///Users/daniel/git/sticker2/sticker2-utils)" = rec {
         crateName = "sticker2-utils";
         version = "0.2.0";
         edition = "2018";
@@ -3850,16 +3916,16 @@ rec {
         ];
         dependencies = [
           {
+            name = "anyhow";
+            packageId = "anyhow 1.0.26 (registry+https://github.com/rust-lang/crates.io-index)";
+          }
+          {
             name = "clap";
             packageId = "clap 2.33.0 (registry+https://github.com/rust-lang/crates.io-index)";
           }
           {
             name = "conllu";
-            packageId = "conllu 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)";
-          }
-          {
-            name = "failure";
-            packageId = "failure 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)";
+            packageId = "conllu 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)";
           }
           {
             name = "indicatif";
@@ -3884,7 +3950,7 @@ rec {
           }
           {
             name = "sticker-encoders";
-            packageId = "sticker-encoders 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)";
+            packageId = "sticker-encoders 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)";
           }
           {
             name = "sticker-transformers";
@@ -3893,7 +3959,7 @@ rec {
           }
           {
             name = "sticker2";
-            packageId = "sticker2 0.2.0 (path+file:///home/daniel/git/sticker2/sticker2)";
+            packageId = "sticker2 0.2.0 (path+file:///Users/daniel/git/sticker2/sticker2)";
             usesDefaultFeatures = false;
           }
           {
@@ -4096,6 +4162,47 @@ rec {
           {
             name = "unicode-width";
             packageId = "unicode-width 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)";
+          }
+        ];
+        
+      };
+      "thiserror 1.0.15 (registry+https://github.com/rust-lang/crates.io-index)" = rec {
+        crateName = "thiserror";
+        version = "1.0.15";
+        edition = "2018";
+        sha256 = "04j0j9kzhfqzjqavmm2bpqd90v5j1jxvcyr5mc042438zz9d7csl";
+        authors = [
+          "David Tolnay <dtolnay@gmail.com>"
+        ];
+        dependencies = [
+          {
+            name = "thiserror-impl";
+            packageId = "thiserror-impl 1.0.15 (registry+https://github.com/rust-lang/crates.io-index)";
+          }
+        ];
+        
+      };
+      "thiserror-impl 1.0.15 (registry+https://github.com/rust-lang/crates.io-index)" = rec {
+        crateName = "thiserror-impl";
+        version = "1.0.15";
+        edition = "2018";
+        sha256 = "1p8hjdj4lhsprh7zl4d0c8y06387k3dhs9cidwk1axrv2642k5ya";
+        procMacro = true;
+        authors = [
+          "David Tolnay <dtolnay@gmail.com>"
+        ];
+        dependencies = [
+          {
+            name = "proc-macro2";
+            packageId = "proc-macro2 1.0.8 (registry+https://github.com/rust-lang/crates.io-index)";
+          }
+          {
+            name = "quote";
+            packageId = "quote 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)";
+          }
+          {
+            name = "syn";
+            packageId = "syn 1.0.14 (registry+https://github.com/rust-lang/crates.io-index)";
           }
         ];
         
@@ -4730,23 +4837,23 @@ rec {
         };
         resolvedDefaultFeatures = [ "serde" "serialization-serde" "transactions" ];
       };
-      "wordpieces 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)" = rec {
+      "wordpieces 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)" = rec {
         crateName = "wordpieces";
-        version = "0.2.1";
+        version = "0.3.0";
         edition = "2018";
-        sha256 = "0hglvqhb8kw8198wf4jzcnbhi2mc6ppwyr6b5y6gy0vgkyk8r6c1";
+        sha256 = "0bq379aj1c1xjf61slxdq4iyqlhyim3fnp19i75dcl05i3wf4v9g";
         authors = [
           "Daniël de Kok <me@danieldk.eu>"
           "Tobias Pütz <tobias.puetz@uni-tuebingen.de"
         ];
         dependencies = [
           {
-            name = "failure";
-            packageId = "failure 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)";
-          }
-          {
             name = "fst";
             packageId = "fst 0.3.5 (registry+https://github.com/rust-lang/crates.io-index)";
+          }
+          {
+            name = "thiserror";
+            packageId = "thiserror 1.0.15 (registry+https://github.com/rust-lang/crates.io-index)";
           }
         ];
         

@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use std::path;
 
 #[cfg(feature = "load-hdf5")]
-use failure::Fallible;
+use anyhow::Error;
 #[cfg(feature = "load-hdf5")]
 use hdf5::File;
 #[cfg(feature = "load-hdf5")]
@@ -70,7 +70,7 @@ impl BertEmbeddingLayer {
         vs: impl Borrow<Path<'a>>,
         pretrain_config: &PretrainConfig,
         pretrained_file: &File,
-    ) -> Fallible<BertEmbeddingLayer> {
+    ) -> Result<BertEmbeddingLayer, Error> {
         let vs = vs.borrow();
 
         let embeddings = match pretrain_config {
@@ -155,7 +155,7 @@ impl BertModel {
         hdf_path: impl AsRef<path::Path>,
         encoders: &Encoders,
         layers_dropout: f64,
-    ) -> Fallible<Self> {
+    ) -> Result<Self, Error> {
         let vs = vs.borrow();
 
         let pretrained_file = File::open(hdf_path, "r")?;

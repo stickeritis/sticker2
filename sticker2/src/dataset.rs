@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 use std::io::{BufReader, Read, Seek, SeekFrom};
 
+use anyhow::Error;
 use conllu::io::{ReadSentence, Reader};
-use failure::Fallible;
 use ndarray::Array1;
 use rand::SeedableRng;
 use rand_xorshift::XorShiftRng;
@@ -18,7 +18,7 @@ use crate::util::RandomRemoveVec;
 /// A data set provides an iterator over the batches in that
 /// dataset.
 pub trait DataSet<'a> {
-    type Iter: Iterator<Item = Fallible<Tensors>>;
+    type Iter: Iterator<Item = Result<Tensors, Error>>;
 
     /// Get an iterator over the dataset batches.
     ///
@@ -37,7 +37,7 @@ pub trait DataSet<'a> {
         max_len: Option<SequenceLength>,
         shuffle_buffer_size: Option<usize>,
         labels: bool,
-    ) -> Fallible<Self::Iter>;
+    ) -> Result<Self::Iter, Error>;
 }
 
 /// A CoNLL-X data set.
@@ -61,7 +61,7 @@ impl<R> ConlluDataSet<R> {
         tokenizer: &'a dyn Tokenize,
         max_len: Option<SequenceLength>,
         shuffle_buffer_size: Option<usize>,
-    ) -> Box<dyn Iterator<Item = Fallible<SentenceWithPieces>> + 'ds>
+    ) -> Box<dyn Iterator<Item = Result<SentenceWithPieces, conllu::IOError>> + 'ds>
     where
         R: ReadSentence + 'ds,
     {
@@ -86,7 +86,8 @@ impl<'ds, 'a: 'ds, R> DataSet<'a> for &'ds mut ConlluDataSet<R>
 where
     R: Read + Seek,
 {
-    type Iter = ConlluIter<'a, Box<dyn Iterator<Item = Fallible<SentenceWithPieces>> + 'ds>>;
+    type Iter =
+        ConlluIter<'a, Box<dyn Iterator<Item = Result<SentenceWithPieces, conllu::IOError>> + 'ds>>;
 
     fn batches(
         self,
@@ -96,7 +97,7 @@ where
         max_len: Option<SequenceLength>,
         shuffle_buffer_size: Option<usize>,
         labels: bool,
-    ) -> Fallible<Self::Iter> {
+    ) -> Result<Self::Iter, Error> {
         // Rewind to the beginning of the data (if necessary).
         self.0.seek(SeekFrom::Start(0))?;
 
@@ -118,7 +119,7 @@ where
 
 pub struct ConlluIter<'a, I>
 where
-    I: Iterator<Item = Fallible<SentenceWithPieces>>,
+    I: Iterator<Item = Result<SentenceWithPieces, conllu::IOError>>,
 {
     batch_size: usize,
     labels: bool,
@@ -128,13 +129,13 @@ where
 
 impl<'a, I> ConlluIter<'a, I>
 where
-    I: Iterator<Item = Fallible<SentenceWithPieces>>,
+    I: Iterator<Item = Result<SentenceWithPieces, conllu::IOError>>,
 {
     fn next_with_labels(
         &mut self,
         tokenized_sentences: Vec<SentenceWithPieces>,
         max_seq_len: usize,
-    ) -> Option<Fallible<Tensors>> {
+    ) -> Option<Result<Tensors, Error>> {
         let mut builder = TensorBuilder::new(
             tokenized_sentences.len(),
             max_seq_len,
@@ -152,7 +153,7 @@ where
             for encoder in self.encoders {
                 let encoding = match encoder.encoder().encode(&sentence.sentence) {
                     Ok(encoding) => encoding,
-                    Err(err) => return Some(Err(err)),
+                    Err(err) => return Some(Err(err.into())),
                 };
 
                 let mut labels = Array1::from_elem((input.len(),), 1i64);
@@ -173,7 +174,7 @@ where
         &mut self,
         tokenized_sentences: Vec<SentenceWithPieces>,
         max_seq_len: usize,
-    ) -> Option<Fallible<Tensors>> {
+    ) -> Option<Result<Tensors, Error>> {
         let mut builder: TensorBuilder<NoLabels> = TensorBuilder::new(
             tokenized_sentences.len(),
             max_seq_len,
@@ -196,16 +197,16 @@ where
 
 impl<'a, I> Iterator for ConlluIter<'a, I>
 where
-    I: Iterator<Item = Fallible<SentenceWithPieces>>,
+    I: Iterator<Item = Result<SentenceWithPieces, conllu::IOError>>,
 {
-    type Item = Fallible<Tensors>;
+    type Item = Result<Tensors, Error>;
 
     fn next(&mut self) -> Option<Self::Item> {
         let mut batch_sentences = Vec::with_capacity(self.batch_size);
         while let Some(sentence) = self.sentences.next() {
             let sentence = match sentence {
                 Ok(sentence) => sentence,
-                Err(err) => return Some(Err(err)),
+                Err(err) => return Some(Err(err.into())),
             };
             batch_sentences.push(sentence);
             if batch_sentences.len() == self.batch_size {
@@ -240,7 +241,7 @@ pub trait SentenceIter: Sized {
 
 impl<I> SentenceIter for I
 where
-    I: Iterator<Item = Fallible<SentenceWithPieces>>,
+    I: Iterator<Item = Result<SentenceWithPieces, conllu::IOError>>,
 {
     fn filter_by_len(self, max_len: SequenceLength) -> LengthFilter<Self> {
         LengthFilter {
@@ -276,9 +277,9 @@ pub struct LengthFilter<I> {
 
 impl<I> Iterator for LengthFilter<I>
 where
-    I: Iterator<Item = Fallible<SentenceWithPieces>>,
+    I: Iterator<Item = Result<SentenceWithPieces, conllu::IOError>>,
 {
-    type Item = Fallible<SentenceWithPieces>;
+    type Item = Result<SentenceWithPieces, conllu::IOError>;
 
     fn next(&mut self) -> Option<Self::Item> {
         while let Some(sent) = self.inner.next() {
@@ -316,9 +317,9 @@ pub struct Shuffled<I> {
 
 impl<I> Iterator for Shuffled<I>
 where
-    I: Iterator<Item = Fallible<SentenceWithPieces>>,
+    I: Iterator<Item = Result<SentenceWithPieces, conllu::IOError>>,
 {
-    type Item = Fallible<SentenceWithPieces>;
+    type Item = Result<SentenceWithPieces, conllu::IOError>;
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.buffer.is_empty() {
