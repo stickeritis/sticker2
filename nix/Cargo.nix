@@ -600,11 +600,11 @@ rec {
         ];
         
       };
-      "conllu 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)" = rec {
+      "conllu 0.5.1 (registry+https://github.com/rust-lang/crates.io-index)" = rec {
         crateName = "conllu";
-        version = "0.5.0";
+        version = "0.5.1";
         edition = "2018";
-        sha256 = "01jkdjy83w46f7v9apsiqfknfqxd160g38zn1sbbbkasvr8bylan";
+        sha256 = "1l9x8h3if9jxxcdnjsx3lar1yl1i0cbklhlg3zk9jigv6m66dmq1";
         authors = [
           "Daniël de Kok <me@danieldk.eu>"
         ];
@@ -3694,7 +3694,7 @@ rec {
         dependencies = [
           {
             name = "conllu";
-            packageId = "conllu 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)";
+            packageId = "conllu 0.5.1 (registry+https://github.com/rust-lang/crates.io-index)";
           }
           {
             name = "edit_tree";
@@ -3810,7 +3810,7 @@ rec {
           }
           {
             name = "conllu";
-            packageId = "conllu 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)";
+            packageId = "conllu 0.5.1 (registry+https://github.com/rust-lang/crates.io-index)";
           }
           {
             name = "edit_tree";
@@ -3925,7 +3925,7 @@ rec {
           }
           {
             name = "conllu";
-            packageId = "conllu 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)";
+            packageId = "conllu 0.5.1 (registry+https://github.com/rust-lang/crates.io-index)";
           }
           {
             name = "indicatif";
