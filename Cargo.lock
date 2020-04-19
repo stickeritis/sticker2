@@ -217,9 +217,9 @@ dependencies = [
 
 [[package]]
 name = "conllu"
-version = "0.5.0"
+version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5651bf50de5acdb5960ef6a3f18009ad6367a7c3515f95f67186f081bc6c5306"
+checksum = "01d7664c35fb4599e61f8f423a170331501fb2a2a36b691beb5d261707443dd1"
 dependencies = [
  "itertools 0.9.0",
  "petgraph",
