@@ -1,5 +1,2 @@
 [workspace]
 members = ["sticker2", "sticker2-utils"]
-
-[patch.crates-io]
-tch = { git = "https://github.com/LaurentMazare/tch-rs.git", rev = "c631fc4b8bb2" }

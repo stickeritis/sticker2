@@ -4,10 +4,7 @@ let
   sources = import ./nix/sources.nix;
   models = import ./nix/models.nix;
   danieldk = pkgs.callPackage sources.danieldk {};
-  libtorch = danieldk.libtorch.v1_4_0;
-  # PyTorch 1.4.0 headers are not compatible with gcc 9. Remove with
-  # the next PyTorch release.
-  stdenv = if pkgs.stdenv.cc.isGNU then pkgs.gcc8Stdenv else pkgs.stdenv;
+  libtorch = danieldk.libtorch.v1_5_0;
   crateOverrides = with pkgs; defaultCrateOverrides // {
     hdf5-sys = attr: {
       HDF5_DIR = symlinkJoin { name = "hdf5-join"; paths = [ hdf5.dev hdf5.out ]; };
@@ -30,21 +27,16 @@ let
     };
 
     torch-sys = attr: {
-      # Remove when we are not using a git version of tch anymore.
-      src = "${attr.src}/torch-sys";
-
       buildInputs = lib.optional stdenv.isDarwin curl;
 
       LIBTORCH = "${libtorch.dev}";
     };
   };
   buildRustCrate = pkgs.buildRustCrate.override {
-    inherit stdenv;
-
     defaultCrateOverrides = crateOverrides;
   };
   cargo_nix = pkgs.callPackage ./nix/Cargo.nix {
-    inherit buildRustCrate pkgs stdenv;
+    inherit buildRustCrate;
   };
 in with pkgs; lib.flatten (lib.mapAttrsToList (_: drv: [
   (drv.build.override {
