@@ -1443,21 +1443,9 @@ dependencies = [
 
 [[package]]
 name = "sticker-transformers"
-version = "0.5.0"
+version = "0.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c6d9cf6a0f663b0cc0fcb53b43dec242a17d1a27b996b2b68f36e258f2ab3495"
-dependencies = [
- "failure",
- "hdf5",
- "serde",
- "tch",
-]
-
-[[package]]
-name = "sticker-transformers"
-version = "0.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e3fe39d943156906202cece2f14d32470bafe0936584ece88f765ccc7b4926d0"
+checksum = "b31843579301379446bedd394dd70143611a3d16329f33f4161092742a6ae792"
 dependencies = [
  "hdf5",
  "serde",
@@ -1486,7 +1474,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sticker-encoders",
- "sticker-transformers 0.6.0",
+ "sticker-transformers",
  "tch",
  "thiserror",
  "toml",
@@ -1506,7 +1494,7 @@ dependencies = [
  "serde_yaml",
  "stdinout",
  "sticker-encoders",
- "sticker-transformers 0.5.0",
+ "sticker-transformers",
  "sticker2",
  "tch",
  "threadpool",
@@ -1554,8 +1542,9 @@ dependencies = [
 
 [[package]]
 name = "tch"
-version = "0.1.6"
-source = "git+https://github.com/LaurentMazare/tch-rs.git?rev=c631fc4b8bb2#c631fc4b8bb22df1e10e2c1468e6302ffec8c870"
+version = "0.1.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c3da599d3cbdfc08755aec52bfc0c1360ebe6613c13434aef7eb56f05da0b2e5"
 dependencies = [
  "failure",
  "lazy_static",
@@ -1654,8 +1643,9 @@ dependencies = [
 
 [[package]]
 name = "torch-sys"
-version = "0.1.6"
-source = "git+https://github.com/LaurentMazare/tch-rs.git?rev=c631fc4b8bb2#c631fc4b8bb22df1e10e2c1468e6302ffec8c870"
+version = "0.1.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f57908de000ae3932dff570eea87586bbf49d44efa81fb1a5580e79ef973da43"
 dependencies = [
  "cc",
  "cmake",

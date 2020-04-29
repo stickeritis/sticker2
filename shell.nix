@@ -7,12 +7,7 @@ let
   nixpkgs = import sources.nixpkgs {};
   danieldk = nixpkgs.callPackage sources.danieldk {};
   mozilla = nixpkgs.callPackage "${sources.mozilla}/package-set.nix" {};
-  libtorch = danieldk.libtorch.v1_4_0;
-
-  # PyTorch 1.4.0 headers are not compatible with gcc 9. Remove with
-  # the next PyTorch release.
-  stdenv = if nixpkgs.stdenv.cc.isGNU then nixpkgs.gcc8Stdenv else nixpkgs.stdenv;
-  mkShell = nixpkgs.mkShell.override (attr: { inherit stdenv; });
+  libtorch = danieldk.libtorch.v1_5_0;
 in with nixpkgs; mkShell (models // {
   nativeBuildInputs = [
     mozilla.latest.rustChannels.stable.rust
