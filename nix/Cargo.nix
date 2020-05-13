@@ -359,7 +359,6 @@ rec {
         features = {
           "default" = [ "std" ];
         };
-        resolvedDefaultFeatures = [ "default" "std" ];
       };
       "bzip2" = rec {
         crateName = "bzip2";
@@ -1326,32 +1325,7 @@ rec {
         };
         resolvedDefaultFeatures = [ "miniz_oxide" "rust_backend" ];
       };
-      "fst 0.3.5" = rec {
-        crateName = "fst";
-        version = "0.3.5";
-        edition = "2015";
-        sha256 = "1mpby7wa5mkpgjiilam94a2l9mxx9wpgs3nw2nr1a0czzwsb8zwj";
-        authors = [
-          "Andrew Gallant <jamslam@gmail.com>"
-        ];
-        dependencies = [
-          {
-            name = "byteorder";
-            packageId = "byteorder";
-          }
-          {
-            name = "memmap";
-            packageId = "memmap";
-            optional = true;
-          }
-        ];
-        features = {
-          "default" = [ "mmap" ];
-          "mmap" = [ "memmap" ];
-        };
-        resolvedDefaultFeatures = [ "default" "memmap" "mmap" ];
-      };
-      "fst 0.4.3" = rec {
+      "fst" = rec {
         crateName = "fst";
         version = "0.4.3";
         edition = "2018";
@@ -1945,29 +1919,6 @@ rec {
         };
         resolvedDefaultFeatures = [ "default" "std" "use_std" ];
       };
-      "memmap" = rec {
-        crateName = "memmap";
-        version = "0.6.2";
-        edition = "2015";
-        sha256 = "1zy6s0ni0lx9rjzq3gq2zz9r8zgjmbp02332g3gsj4fyhv4s5zz2";
-        authors = [
-          "Dan Burkert <dan@danburkert.com>"
-        ];
-        dependencies = [
-          {
-            name = "libc";
-            packageId = "libc";
-            target = { target, features }: target."unix";
-          }
-          {
-            name = "winapi";
-            packageId = "winapi";
-            target = { target, features }: target."windows";
-            features = [ "basetsd" "handleapi" "memoryapi" "minwindef" "std" "sysinfoapi" ];
-          }
-        ];
-        
-      };
       "memoffset" = rec {
         crateName = "memoffset";
         version = "0.5.3";
@@ -2320,7 +2271,7 @@ rec {
           }
           {
             name = "fst";
-            packageId = "fst 0.4.3";
+            packageId = "fst";
           }
           {
             name = "lazy_static";
@@ -4845,7 +4796,7 @@ rec {
         features = {
           "debug" = [ "impl-debug" ];
         };
-        resolvedDefaultFeatures = [ "basetsd" "consoleapi" "errhandlingapi" "fileapi" "handleapi" "impl-debug" "impl-default" "ktmw32" "libloaderapi" "lmcons" "memoryapi" "minschannel" "minwinbase" "minwindef" "ntdef" "ntsecapi" "ntstatus" "processenv" "profileapi" "schannel" "securitybaseapi" "sspi" "std" "sysinfoapi" "timezoneapi" "winbase" "wincon" "wincrypt" "winerror" "winnt" "winreg" "winsock2" "winuser" "ws2def" "ws2ipdef" "ws2tcpip" ];
+        resolvedDefaultFeatures = [ "consoleapi" "errhandlingapi" "fileapi" "handleapi" "impl-debug" "impl-default" "ktmw32" "libloaderapi" "lmcons" "minschannel" "minwinbase" "minwindef" "ntdef" "ntsecapi" "ntstatus" "processenv" "profileapi" "schannel" "securitybaseapi" "sspi" "std" "sysinfoapi" "timezoneapi" "winbase" "wincon" "wincrypt" "winerror" "winnt" "winreg" "winsock2" "winuser" "ws2def" "ws2ipdef" "ws2tcpip" ];
       };
       "winapi-i686-pc-windows-gnu" = rec {
         crateName = "winapi-i686-pc-windows-gnu";
@@ -4913,9 +4864,9 @@ rec {
       };
       "wordpieces" = rec {
         crateName = "wordpieces";
-        version = "0.3.0";
+        version = "0.4.0";
         edition = "2018";
-        sha256 = "0bq379aj1c1xjf61slxdq4iyqlhyim3fnp19i75dcl05i3wf4v9g";
+        sha256 = "0pzz6rvn3abpfhj98brrhh95s8x1bvkrfsmd3w8w9ffmpd2bxims";
         authors = [
           "Daniël de Kok <me@danieldk.eu>"
           "Tobias Pütz <tobias.puetz@uni-tuebingen.de"
@@ -4923,7 +4874,7 @@ rec {
         dependencies = [
           {
             name = "fst";
-            packageId = "fst 0.3.5";
+            packageId = "fst";
           }
           {
             name = "thiserror";

@@ -475,16 +475,6 @@ dependencies = [
 
 [[package]]
 name = "fst"
-version = "0.3.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "927fb434ff9f0115b215dc0efd2e4fbdd7448522a92a1aa37c77d6a2f8f1ebd6"
-dependencies = [
- "byteorder",
- "memmap",
-]
-
-[[package]]
-name = "fst"
 version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "81f9cac32c1741cdf6b66be7dcf0d9c7f25ccf12f8aa84c16cfa31f9f14513b3"
@@ -737,16 +727,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "53445de381a1f436797497c61d851644d0e8e88e6140f22872ad33a704933978"
 
 [[package]]
-name = "memmap"
-version = "0.6.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e2ffa2c986de11a9df78620c01eeaaf27d94d3ff02bf81bfcca953102dd0c6ff"
-dependencies = [
- "libc",
- "winapi",
-]
-
-[[package]]
 name = "memoffset"
 version = "0.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -885,7 +865,7 @@ checksum = "0ff292ecc7c1b14349a9c26e32ab672a9722553e2550a3376f191da546b4bd57"
 dependencies = [
  "caseless",
  "conllu",
- "fst 0.4.3",
+ "fst",
  "lazy_static",
  "maplit",
  "seqalign",
@@ -1898,11 +1878,11 @@ dependencies = [
 
 [[package]]
 name = "wordpieces"
-version = "0.3.0"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2f6de2f8880550d6ca89295ceb468d1e52ec23c1ad531d8c933db020553a032f"
+checksum = "bac6be44bbd5b9c4111fad6a97e75ea1235d1284392f94247477a9617736ff5f"
 dependencies = [
- "fst 0.3.5",
+ "fst",
  "thiserror",
 ]
 
