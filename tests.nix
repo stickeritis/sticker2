@@ -35,7 +35,11 @@ let
   buildRustCrate = pkgs.buildRustCrate.override {
     defaultCrateOverrides = crateOverrides;
   };
-  cargo_nix = pkgs.callPackage ./nix/Cargo.nix {
+  crateTools = import "${sources.crate2nix}/tools.nix" {};
+  cargoNix = pkgs.callPackage (crateTools.generatedCargoNix {
+    name = "sticker2";
+    src = pkgs.nix-gitignore.gitignoreSource [ ".git/" "nix/" "*.nix" ] ./.;
+  }) {
     inherit buildRustCrate;
   };
 in with pkgs; lib.flatten (lib.mapAttrsToList (_: drv: [
@@ -47,4 +51,4 @@ in with pkgs; lib.flatten (lib.mapAttrsToList (_: drv: [
     features = [ "load-hdf5" "model-tests" ];
     runTests = true;
   })
-]) cargo_nix.workspaceMembers)
+]) cargoNix.workspaceMembers)
