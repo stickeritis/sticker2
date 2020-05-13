@@ -431,6 +431,29 @@ rec {
         };
         resolvedDefaultFeatures = [ "simd" "std" ];
       };
+      "caseless" = rec {
+        crateName = "caseless";
+        version = "0.2.1";
+        edition = "2015";
+        sha256 = "0zrx8rrks6mq08m37y3ng8kq272diphnvlrircif2yvl30rsp3c0";
+        build = "src/build.rs";
+        authors = [
+          "Simon Sapin <simon.sapin@exyr.org>"
+        ];
+        dependencies = [
+          {
+            name = "unicode-normalization";
+            packageId = "unicode-normalization";
+          }
+        ];
+        buildDependencies = [
+          {
+            name = "regex";
+            packageId = "regex";
+          }
+        ];
+        
+      };
       "cast" = rec {
         crateName = "cast";
         version = "0.2.3";
@@ -1303,7 +1326,7 @@ rec {
         };
         resolvedDefaultFeatures = [ "miniz_oxide" "rust_backend" ];
       };
-      "fst" = rec {
+      "fst 0.3.5" = rec {
         crateName = "fst";
         version = "0.3.5";
         edition = "2015";
@@ -1327,6 +1350,19 @@ rec {
           "mmap" = [ "memmap" ];
         };
         resolvedDefaultFeatures = [ "default" "memmap" "mmap" ];
+      };
+      "fst 0.4.3" = rec {
+        crateName = "fst";
+        version = "0.4.3";
+        edition = "2018";
+        sha256 = "1cqk8pqzjcgsdk0q9apq2b7mrwn7v7qdrrvbnvvcsh8p5k1wmyc1";
+        authors = [
+          "Andrew Gallant <jamslam@gmail.com>"
+        ];
+        features = {
+          "levenshtein" = [ "utf8-ranges" ];
+        };
+        resolvedDefaultFeatures = [ "default" ];
       };
       "fuchsia-cprng" = rec {
         crateName = "fuchsia-cprng";
@@ -2265,6 +2301,50 @@ rec {
         ];
         
       };
+      "ohnomore" = rec {
+        crateName = "ohnomore";
+        version = "0.2.2";
+        edition = "2018";
+        sha256 = "0mxxni3aa78rdwvs6l157raj55racymk4vn2m54l7cf1qzn95whg";
+        authors = [
+          "Daniël de Kok <me@danieldk.eu>"
+        ];
+        dependencies = [
+          {
+            name = "caseless";
+            packageId = "caseless";
+          }
+          {
+            name = "conllu";
+            packageId = "conllu";
+          }
+          {
+            name = "fst";
+            packageId = "fst 0.4.3";
+          }
+          {
+            name = "lazy_static";
+            packageId = "lazy_static";
+          }
+          {
+            name = "maplit";
+            packageId = "maplit";
+          }
+          {
+            name = "seqalign";
+            packageId = "seqalign";
+          }
+          {
+            name = "thiserror";
+            packageId = "thiserror";
+          }
+          {
+            name = "unicode-normalization";
+            packageId = "unicode-normalization";
+          }
+        ];
+        
+      };
       "oorandom" = rec {
         crateName = "oorandom";
         version = "11.1.0";
@@ -2418,7 +2498,7 @@ rec {
           }
           {
             name = "smallvec";
-            packageId = "smallvec";
+            packageId = "smallvec 0.6.13";
           }
           {
             name = "winapi";
@@ -3483,9 +3563,9 @@ rec {
       };
       "seqalign" = rec {
         crateName = "seqalign";
-        version = "0.2.1";
-        edition = "2015";
-        sha256 = "0qlswjxvaxkx3058w1061m404q833p752inqgrwkdd2m47jr98xw";
+        version = "0.2.2";
+        edition = "2018";
+        sha256 = "0pdv8r9a6hf5kya2jgax8hc493kpmyg7q06207lzh1h03xscbmwr";
         authors = [
           "Daniël de Kok <me@danieldk.eu>"
         ];
@@ -3609,7 +3689,7 @@ rec {
         ];
         
       };
-      "smallvec" = rec {
+      "smallvec 0.6.13" = rec {
         crateName = "smallvec";
         version = "0.6.13";
         edition = "2015";
@@ -3628,6 +3708,18 @@ rec {
           "default" = [ "std" ];
         };
         resolvedDefaultFeatures = [ "default" "std" ];
+      };
+      "smallvec 1.4.0" = rec {
+        crateName = "smallvec";
+        version = "1.4.0";
+        edition = "2018";
+        sha256 = "1r2yxn8qamzb1jn91zbphl0x49scbfxxjr629ql58mv1w5w5djy7";
+        libPath = "lib.rs";
+        authors = [
+          "Simon Sapin <simon.sapin@exyr.org>"
+        ];
+        features = {
+        };
       };
       "socket2" = rec {
         crateName = "socket2";
@@ -3685,9 +3777,9 @@ rec {
       };
       "sticker-encoders" = rec {
         crateName = "sticker-encoders";
-        version = "0.5.0";
+        version = "0.5.1";
         edition = "2018";
-        sha256 = "1s9ddx6dirdqfy589f96jx9353hyyh1sb321n4xq460sdiz2m5kv";
+        sha256 = "0fb5xcy211mp6gn6x4jm8mxvr4kyrnpyjw8dzrgq1byh3ssi91c2";
         authors = [
           "Daniël de Kok <me@danieldk.eu>"
         ];
@@ -3701,8 +3793,16 @@ rec {
             packageId = "edit_tree";
           }
           {
+            name = "lazy_static";
+            packageId = "lazy_static";
+          }
+          {
             name = "numberer";
             packageId = "numberer";
+          }
+          {
+            name = "ohnomore";
+            packageId = "ohnomore";
           }
           {
             name = "ordered-float";
@@ -4315,6 +4415,22 @@ rec {
         features = {
         };
       };
+      "unicode-normalization" = rec {
+        crateName = "unicode-normalization";
+        version = "0.1.12";
+        edition = "2015";
+        sha256 = "195gb4fzlgg4g9cv6w057ncpmvvnx30r00w9hj114knhmlmm6yal";
+        authors = [
+          "kwantam <kwantam@gmail.com>"
+        ];
+        dependencies = [
+          {
+            name = "smallvec";
+            packageId = "smallvec 1.4.0";
+          }
+        ];
+        
+      };
       "unicode-segmentation" = rec {
         crateName = "unicode-segmentation";
         version = "1.6.0";
@@ -4807,7 +4923,7 @@ rec {
         dependencies = [
           {
             name = "fst";
-            packageId = "fst";
+            packageId = "fst 0.3.5";
           }
           {
             name = "thiserror";

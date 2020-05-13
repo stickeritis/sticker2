@@ -10,7 +10,7 @@ use sticker_encoders::deprel::{
     DependencyEncoding, RelativePOS, RelativePOSEncoder, RelativePosition, RelativePositionEncoder,
 };
 use sticker_encoders::layer::LayerEncoder;
-use sticker_encoders::lemma::EditTreeEncoder;
+use sticker_encoders::lemma::{EditTreeEncoder, TdzLemmaEncoder};
 use sticker_encoders::{EncodingProb, SentenceDecoder, SentenceEncoder};
 use thiserror::Error;
 
@@ -98,6 +98,9 @@ pub enum DecoderError {
 
     #[error(transparent)]
     RelativePosition(<RelativePositionEncoder as SentenceDecoder>::Error),
+
+    #[error(transparent)]
+    TdzLemma(<TdzLemmaEncoder as SentenceDecoder>::Error),
 }
 
 /// Wrapper of encoder error types.
@@ -114,6 +117,9 @@ pub enum EncoderError {
 
     #[error(transparent)]
     RelativePosition(<RelativePositionEncoder as SentenceEncoder>::Error),
+
+    #[error(transparent)]
+    TdzLemma(<TdzLemmaEncoder as SentenceEncoder>::Error),
 }
 
 /// Wrapper of the various supported encoders.
@@ -125,6 +131,7 @@ pub enum Encoder {
     RelativePosition(
         CategoricalEncoderWrap<RelativePositionEncoder, DependencyEncoding<RelativePosition>>,
     ),
+    TdzLemma(CategoricalEncoderWrap<TdzLemmaEncoder, EditTree<char>>),
 }
 
 #[allow(clippy::len_without_is_empty)]
@@ -135,6 +142,7 @@ impl Encoder {
             Encoder::Lemma(encoder) => encoder.len(),
             Encoder::RelativePOS(encoder) => encoder.len(),
             Encoder::RelativePosition(encoder) => encoder.len(),
+            Encoder::TdzLemma(encoder) => encoder.len(),
         }
     }
 }
@@ -161,6 +169,9 @@ impl SentenceDecoder for Encoder {
             Encoder::RelativePosition(decoder) => decoder
                 .decode(labels, sentence)
                 .map_err(DecoderError::RelativePosition),
+            Encoder::TdzLemma(decoder) => decoder
+                .decode(labels, sentence)
+                .map_err(DecoderError::TdzLemma),
         }
     }
 }
@@ -180,6 +191,7 @@ impl SentenceEncoder for Encoder {
             Encoder::RelativePosition(encoder) => encoder
                 .encode(sentence)
                 .map_err(EncoderError::RelativePosition),
+            Encoder::TdzLemma(encoder) => encoder.encode(sentence).map_err(EncoderError::TdzLemma),
         }
     }
 }
@@ -218,6 +230,13 @@ impl From<&EncoderType> for Encoder {
             EncoderType::Sequence(ref layer) => Encoder::Layer(
                 MutableCategoricalEncoder::new(LayerEncoder::new(layer.clone()), Numberer::new(2))
                     .into(),
+            ),
+            EncoderType::TdzLemma(backoff_strategy) => Encoder::TdzLemma(
+                MutableCategoricalEncoder::new(
+                    TdzLemmaEncoder::new(*backoff_strategy),
+                    Numberer::new(2),
+                )
+                .into(),
             ),
         }
     }
