@@ -150,6 +150,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "caseless"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "808dab3318747be122cb31d36de18d4d1c81277a76f8332a02b81a3d73463d7f"
+dependencies = [
+ "regex",
+ "unicode-normalization",
+]
+
+[[package]]
 name = "cast"
 version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -472,6 +482,12 @@ dependencies = [
  "byteorder",
  "memmap",
 ]
+
+[[package]]
+name = "fst"
+version = "0.4.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "81f9cac32c1741cdf6b66be7dcf0d9c7f25ccf12f8aa84c16cfa31f9f14513b3"
 
 [[package]]
 name = "fuchsia-cprng"
@@ -862,6 +878,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "ohnomore"
+version = "0.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0ff292ecc7c1b14349a9c26e32ab672a9722553e2550a3376f191da546b4bd57"
+dependencies = [
+ "caseless",
+ "conllu",
+ "fst 0.4.3",
+ "lazy_static",
+ "maplit",
+ "seqalign",
+ "thiserror",
+ "unicode-normalization",
+]
+
+[[package]]
 name = "oorandom"
 version = "11.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -919,7 +951,7 @@ dependencies = [
  "rand 0.6.5",
  "redox_syscall",
  "rustc_version",
- "smallvec",
+ "smallvec 0.6.13",
  "winapi",
 ]
 
@@ -1345,9 +1377,9 @@ dependencies = [
 
 [[package]]
 name = "seqalign"
-version = "0.2.1"
+version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bca394e52155b436797ed84651ce1d036102480d06048e0a187d76b5bbe49a62"
+checksum = "99d7c5741f0006f8e901c2007c9eaf778e4418445d3d29949fc541a35246bb5d"
 
 [[package]]
 name = "serde"
@@ -1402,6 +1434,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "smallvec"
+version = "1.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c7cb5678e1615754284ec264d9bb5b4c27d2018577fd90ac0ceb578591ed5ee4"
+
+[[package]]
 name = "socket2"
 version = "0.3.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1427,13 +1465,15 @@ checksum = "29f1026ef7b2ded56453d708809e15f148b7f5b6a51e1ee0237964881ab85680"
 
 [[package]]
 name = "sticker-encoders"
-version = "0.5.0"
+version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7b962a7e6c1a18823bb1418ca503f41e8e32529726b9848a77b8e5d84c6f2de9"
+checksum = "828514b51ed0af805ffe0d71e9afcd7e92bc7b4555926eec33b786203ceb6539"
 dependencies = [
  "conllu",
  "edit_tree",
+ "lazy_static",
  "numberer",
+ "ohnomore",
  "ordered-float",
  "petgraph",
  "serde",
@@ -1656,6 +1696,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "unicode-normalization"
+version = "0.1.12"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5479532badd04e128284890390c1e876ef7a993d0570b3597ae43dfa1d59afa4"
+dependencies = [
+ "smallvec 1.4.0",
+]
+
+[[package]]
 name = "unicode-segmentation"
 version = "1.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1853,7 +1902,7 @@ version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2f6de2f8880550d6ca89295ceb468d1e52ec23c1ad531d8c933db020553a032f"
 dependencies = [
- "fst",
+ "fst 0.3.5",
  "thiserror",
 ]
 

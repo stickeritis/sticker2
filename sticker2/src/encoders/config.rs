@@ -36,6 +36,10 @@ pub enum EncoderType {
 
     /// Encoder for plain sequence labels.
     Sequence(Layer),
+
+    /// Lemma encoder using edit trees, with TüBa-D/Z-specific
+    /// transformations.
+    TdzLemma(BackoffStrategy),
 }
 
 /// The type of dependency encoder.
