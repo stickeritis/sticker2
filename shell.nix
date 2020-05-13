@@ -17,7 +17,7 @@ in with nixpkgs; mkShell (models // {
   buildInputs = [
     curl
     openssl
-    (sentencepiece.override (attrs: { inherit stdenv; }))
+    sentencepiece
     libtorch
   ] ++ lib.optional stdenv.isDarwin darwin.apple_sdk.frameworks.Security;
   # Unless we use pkg-config, the hdf5-sys build script does not like
