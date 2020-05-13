@@ -29,7 +29,7 @@ sticker-transformers = { version = "0.6.2", default-features = false }
 tch = "0.1.7"
 thiserror = "1"
 toml = "0.5"
-wordpieces = "0.3"
+wordpieces = "0.4"
 
 [dev-dependencies]
 approx = "0.3"
