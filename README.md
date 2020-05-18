@@ -1,16 +1,15 @@
 # sticker2
 
+## Introduction
+
 **sticker2** is a sequence labeler using
 [Transformer](https://arxiv.org/abs/1706.03762) networks. sticker2
 models can be trained from scratch or using pretrained models, such as
-[BERT](https://arxiv.org/abs/1810.04805v2).
+[BERT](https://arxiv.org/abs/1810.04805v2) or
+[XLM-RoBERTa](https://arxiv.org/abs/1911.02116).
 
-## Introduction
-
-sticker is a sequence labeler that uses either recurrent neural
-networks, transformers, or dilated convolution networks. In principle,
-it can be used to perform any sequence labeling task, but so far the
-focus has been on:
+In principle, sticker2 can be used to perform any sequence labeling
+task, but so far the focus has been on:
 
 * Part-of-speech tagging
 * Morphological tagging
@@ -19,27 +18,35 @@ focus has been on:
 * Dependency parsing
 * Named entity recognition
 
+Starting from version 0.3, CoNLL-U is the default input/output format.
+
 ## Features
 
-* Input representations: word pieces
+* Input representations:
+  - Word pieces
+  - Sentence pieces
+* Flexible sequence encoder/decoder architecture, which supports:
+  * Simple sequence labels (e.g. POS, morphology, named entities)
+  * Lemmatization, based on edit trees
+  * Dependency parsing
+  * Simple API to extend to other tasks
 * Models representations:
   * Transformers
-  * Pretraining (e.g. BERT)
+  * Pretraining from BERT and XLM-RoBERTa models
 * Multi-task training and classification using scalar weighting.
+* Model distillation
 * Deployment:
   * Standalone binary that links against PyTorch's `libtorch`
   * Very liberal [license](LICENSE.md)
 
 ## Status
 
-sticker2 is still **under heavy development**. For production use, we
-recommend the [previous version of
-sticker](https://github.com/stickeritis/sticker).
+sticker2 is still **under heavy development**. However, models are
+reusable and the API is stable for every *y* in version 0.y.z.
 
 ## References
 
 sticker uses techniques from or was inspired by the following papers:
-
 
 * The model architecture and training regime was largely based on [75
   Languages, 1 Model: Parsing Universal Dependencies
