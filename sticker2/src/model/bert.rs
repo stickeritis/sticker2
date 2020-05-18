@@ -158,7 +158,7 @@ impl BertModel {
     ) -> Result<Self, Error> {
         let vs = vs.borrow();
 
-        let pretrained_file = File::open(hdf_path, "r")?;
+        let pretrained_file = File::open(hdf_path)?;
 
         let bert_config = pretrain_config.bert_config();
 
