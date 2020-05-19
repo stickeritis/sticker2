@@ -1,8 +1,15 @@
 [package]
 name = "sticker2-utils"
-version = "0.2.0"
-authors = ["Daniël de Kok <me@danieldk.eu>"]
+version = "0.3.0"
 edition = "2018"
+authors = ["Daniël de Kok <me@danieldk.eu>"]
+description = "Neural sequence labeler"
+documentation = "https://github.com/stickeritis/sticker"
+homepage = "https://github.com/stickeritis/sticker"
+repository = "https://github.com/stickeritis/sticker.git"
+# Use after SPDX list is updated
+# license = "BlueOak-1.0.0"
+license-file = "../LICENSE.md"
 
 [[bin]]
 name = "sticker2"
@@ -17,7 +24,7 @@ itertools = "0.9"
 ordered-float = { version = "1", features = ["serde"] }
 serde_yaml = "0.8"
 stdinout = "0.4"
-sticker2 = { path = "../sticker2", default-features = false }
+sticker2 = { path = "../sticker2", version = "0.3.0", default-features = false }
 sticker-encoders = "0.5"
 sticker-transformers = { version = "0.7", default-features = false }
 tch = "0.1.7"
