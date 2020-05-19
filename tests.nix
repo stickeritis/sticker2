@@ -23,7 +23,7 @@ let
     sentencepiece-sys = attr: {
       nativeBuildInputs = [ pkgconfig ];
 
-      buildInputs = [ (sentencepiece.override (attrs: { inherit stdenv; })) ];
+      buildInputs = [ sentencepiece ];
     };
 
     torch-sys = attr: {
