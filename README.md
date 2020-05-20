@@ -18,7 +18,8 @@ task, but so far the focus has been on:
 * Dependency parsing
 * Named entity recognition
 
-Starting from version 0.3, CoNLL-U is the default input/output format.
+The easiest way to get started with sticker2 is to [use a pretrained
+model](doc/pretrained.md).
 
 ## Features
 
@@ -69,6 +70,9 @@ sticker uses techniques from or was inspired by the following papers:
   Parsing](http://grzegorz.chrupala.me/papers/phd-single.pdf).
   Grzegorz Chrupała, 2008, PhD dissertation, Dublin City University.
 
+## Documentation
+
+* [Pretrained models](doc/pretrained.md)
 
 ## Issues
 
