@@ -10,13 +10,15 @@ of the models that are available and then describes how to use them.
 
 ### Dutch
 
-| Model       | UD POS | Lemma | Morphology | Dependency (LAS) | Size (MiB) |
-|:------------|-------:|------:|-----------:|-----------------:|-----------:|
-| nl-ud-large |  98.81 | 99.05 |      98.82 |            93.35 |        192 |
+| Model        | UD POS | Lemma | Morphology | Dependency (LAS) | Size (MiB) |
+|:-------------|-------:|------:|-----------:|-----------------:|-----------:|
+| nl-ud-large  |  98.81 | 99.05 |      98.82 |            93.35 |        192 |
+| nl-ud-medium |  98.80 | 99.01 |      98.78 |            93.09 |        124 |
 
-| Model       | Docker image                             | Nix attribute                 |
-|:------------|:-----------------------------------------|:------------------------------|
-| nl-ud-large | `danieldk/sticker2:nl-ud-large-20200420` | `sticker2_models.nl-ud-large` |
+| Model        | Docker image                              | Nix attribute                  |
+|:-------------|:------------------------------------------|:-------------------------------|
+| nl-ud-large  | `danieldk/sticker2:nl-ud-large-20200420`  | `sticker2_models.nl-ud-large`  |
+| nl-ud-medium | `danieldk/sticker2:nl-ud-medium-20200430` | `sticker2_models.nl-ud-medium` |
 
 
 ## Usage
