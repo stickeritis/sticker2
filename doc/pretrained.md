@@ -20,6 +20,15 @@ of the models that are available and then describes how to use them.
 | nl-ud-large  | `danieldk/sticker2:nl-ud-large-20200420`  | `sticker2_models.nl-ud-large`  |
 | nl-ud-medium | `danieldk/sticker2:nl-ud-medium-20200430` | `sticker2_models.nl-ud-medium` |
 
+### German
+
+| Model       | UD POS | STSS POS | Lemma | UD morphology | TüBa-D/Z morphology | Dependency (LAS) | Topological fields | Size (MiB) |
+|:------------|-------:|----------|------:|--------------:|--------------------:|-----------------:|--------------------|-----------:|
+| de-ud-large |  99.23 | 99.47    | 99.34 |         98.36 |               98.42 |            95.82 | 98.19              |        200 |
+
+| Model       | Docker image                             | Nix attribute                 |
+|:------------|:-----------------------------------------|:------------------------------|
+| de-ud-large | `danieldk/sticker2:de-ud-large-20200523` | `sticker2_models.de-ud-large` |
 
 ## Usage
 
