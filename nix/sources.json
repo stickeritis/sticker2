@@ -1,4 +1,11 @@
 {
+    "albert-base-v2-sentencepiece": {
+        "sha256": "0dh35nh493bwiqw6yzcwp1mgca1lzgjjhbb04zzc5id6cyv05yzy",
+        "type": "file",
+        "url": "http://www.sfs.uni-tuebingen.de/a3-public-data/sticker2-models/albert-base-v2-sentencepiece.model",
+        "url_template": "http://www.sfs.uni-tuebingen.de/a3-public-data/sticker2-models/albert-base-v2-sentencepiece.model",
+        "version": "1"
+    },
     "bert-base-german-cased-vocab": {
         "sha256": "0g91w3nlq9li113lvw73j4b5v00kpml6wlhk71qlzih6wzw2gqbj",
         "type": "file",

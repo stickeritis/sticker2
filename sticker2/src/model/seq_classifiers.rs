@@ -21,6 +21,7 @@ impl SequenceClassifiers {
     pub fn new<'a>(
         vs: impl Borrow<Path<'a>>,
         pretrain_config: &PretrainConfig,
+        n_layers: i64,
         encoders: &Encoders,
     ) -> Self {
         let vs = vs.borrow();
@@ -41,7 +42,7 @@ impl SequenceClassifiers {
                             input_size: bert_config.hidden_size,
                             layer_dropout_prob: 0.1,
                             layer_norm_eps: bert_config.layer_norm_eps,
-                            n_layers: bert_config.num_hidden_layers,
+                            n_layers,
                             n_labels: encoder.encoder().len() as i64,
                         },
                     ),
