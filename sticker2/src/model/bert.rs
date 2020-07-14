@@ -1,4 +1,4 @@
-use std::borrow::Borrow;
+use std::borrow::{Borrow, Cow};
 use std::collections::HashMap;
 #[cfg(feature = "load-hdf5")]
 use std::path;
@@ -10,12 +10,13 @@ use hdf5::File;
 #[cfg(feature = "load-hdf5")]
 use sticker_transformers::hdf5_model::LoadFromHDF5;
 use sticker_transformers::layers::Dropout;
+use sticker_transformers::models::albert::{AlbertEmbeddings, AlbertEncoder};
 use sticker_transformers::models::bert::{
     BertConfig, BertEmbeddings, BertEncoder, BertError, BertLayerOutput,
 };
 use sticker_transformers::models::roberta::RobertaEmbeddings;
 use sticker_transformers::models::sinusoidal::SinusoidalEmbeddings;
-use sticker_transformers::models::Encoder;
+use sticker_transformers::models::Encoder as _;
 use tch::nn::{ModuleT, Path};
 use tch::{self, Tensor};
 
@@ -24,20 +25,22 @@ use crate::encoders::Encoders;
 use crate::model::seq_classifiers::{SequenceClassifiers, SequenceClassifiersLoss};
 
 pub trait PretrainBertConfig {
-    fn bert_config(&self) -> &BertConfig;
+    fn bert_config<'a>(&'a self) -> Cow<'a, BertConfig>;
 }
 
 impl PretrainBertConfig for PretrainConfig {
-    fn bert_config(&self) -> &BertConfig {
+    fn bert_config<'a>(&'a self) -> Cow<'a, BertConfig> {
         match self {
-            PretrainConfig::Bert(config) => config,
-            PretrainConfig::XlmRoberta(config) => config,
+            PretrainConfig::Albert(config) => Cow::Owned(config.into()),
+            PretrainConfig::Bert(config) => Cow::Borrowed(config),
+            PretrainConfig::XlmRoberta(config) => Cow::Borrowed(config),
         }
     }
 }
 
 #[derive(Debug)]
 enum BertEmbeddingLayer {
+    Albert(AlbertEmbeddings),
     Bert(BertEmbeddings),
     Roberta(RobertaEmbeddings),
     Sinusoidal(SinusoidalEmbeddings),
@@ -49,16 +52,33 @@ impl BertEmbeddingLayer {
         pretrain_config: &PretrainConfig,
         position_embeddings: PositionEmbeddings,
     ) -> Self {
+        let vs = vs.borrow();
+
         match (pretrain_config, position_embeddings) {
+            (PretrainConfig::Albert(config), PositionEmbeddings::Model) => {
+                BertEmbeddingLayer::Albert(AlbertEmbeddings::new(vs / "embeddings", config))
+            }
+            (PretrainConfig::Albert(config), PositionEmbeddings::Sinusoidal { normalize }) => {
+                let normalize = if normalize { Some(2.) } else { None };
+                BertEmbeddingLayer::Sinusoidal(SinusoidalEmbeddings::new(
+                    vs / "embeddings",
+                    config,
+                    normalize,
+                ))
+            }
             (PretrainConfig::Bert(config), PositionEmbeddings::Model) => {
-                BertEmbeddingLayer::Bert(BertEmbeddings::new(vs, config))
+                BertEmbeddingLayer::Bert(BertEmbeddings::new(vs / "encoder", config))
             }
             (PretrainConfig::Bert(config), PositionEmbeddings::Sinusoidal { normalize }) => {
                 let normalize = if normalize { Some(2.) } else { None };
-                BertEmbeddingLayer::Sinusoidal(SinusoidalEmbeddings::new(vs, config, normalize))
+                BertEmbeddingLayer::Sinusoidal(SinusoidalEmbeddings::new(
+                    vs / "encoder",
+                    config,
+                    normalize,
+                ))
             }
             (PretrainConfig::XlmRoberta(config), PositionEmbeddings::Model) => {
-                BertEmbeddingLayer::Roberta(RobertaEmbeddings::new(vs, config))
+                BertEmbeddingLayer::Roberta(RobertaEmbeddings::new(vs / "encoder", config))
             }
             (PretrainConfig::XlmRoberta(_), PositionEmbeddings::Sinusoidal { .. }) => {
                 unreachable!()
@@ -75,6 +95,13 @@ impl BertEmbeddingLayer {
         let vs = vs.borrow();
 
         let embeddings = match pretrain_config {
+            PretrainConfig::Albert(config) => {
+                BertEmbeddingLayer::Albert(AlbertEmbeddings::load_from_hdf5(
+                    vs.sub("embeddings"),
+                    config,
+                    pretrained_file.group("albert/embeddings")?,
+                )?)
+            }
             PretrainConfig::Bert(config) => {
                 BertEmbeddingLayer::Bert(BertEmbeddings::load_from_hdf5(
                     vs.sub("encoder"),
@@ -100,9 +127,81 @@ impl ModuleT for BertEmbeddingLayer {
         use BertEmbeddingLayer::*;
 
         match self {
+            Albert(ref embeddings) => embeddings.forward_t(input, train),
             Bert(ref embeddings) => embeddings.forward_t(input, train),
             Roberta(ref embeddings) => embeddings.forward_t(input, train),
             Sinusoidal(ref embeddings) => embeddings.forward_t(input, train),
+        }
+    }
+}
+
+#[derive(Debug)]
+enum Encoder {
+    Albert(AlbertEncoder),
+    Bert(BertEncoder),
+}
+
+impl Encoder {
+    fn new<'a>(
+        vs: impl Borrow<Path<'a>>,
+        pretrain_config: &PretrainConfig,
+    ) -> Result<Self, BertError> {
+        let vs = vs.borrow() / "encoder";
+
+        let encoder = match pretrain_config {
+            PretrainConfig::Albert(config) => Encoder::Albert(AlbertEncoder::new(vs, config)?),
+            PretrainConfig::Bert(config) => Encoder::Bert(BertEncoder::new(vs, config)?),
+            PretrainConfig::XlmRoberta(config) => Encoder::Bert(BertEncoder::new(vs, config)?),
+        };
+
+        Ok(encoder)
+    }
+
+    #[cfg(feature = "load-hdf5")]
+    fn load_from_hdf5<'a>(
+        vs: impl Borrow<Path<'a>>,
+        pretrain_config: &PretrainConfig,
+        pretrained_file: &File,
+    ) -> Result<Encoder, Error> {
+        let vs = vs.borrow();
+
+        let encoder = match pretrain_config {
+            PretrainConfig::Albert(config) => Encoder::Albert(AlbertEncoder::load_from_hdf5(
+                vs.sub("encoder"),
+                config,
+                pretrained_file.group("albert/encoder")?,
+            )?),
+            PretrainConfig::Bert(config) => Encoder::Bert(BertEncoder::load_from_hdf5(
+                vs.sub("encoder"),
+                config,
+                pretrained_file.group("bert/encoder")?,
+            )?),
+            PretrainConfig::XlmRoberta(config) => Encoder::Bert(BertEncoder::load_from_hdf5(
+                vs.sub("encoder"),
+                config,
+                pretrained_file.group("bert/encoder")?,
+            )?),
+        };
+
+        Ok(encoder)
+    }
+
+    pub fn encode(
+        &self,
+        input: &Tensor,
+        attention_mask: Option<&Tensor>,
+        train: bool,
+    ) -> Vec<BertLayerOutput> {
+        match self {
+            Encoder::Bert(encoder) => encoder.encode(input, attention_mask, train),
+            Encoder::Albert(encoder) => encoder.encode(input, attention_mask, train),
+        }
+    }
+
+    pub fn n_layers(&self) -> i64 {
+        match self {
+            Encoder::Bert(encoder) => encoder.n_layers(),
+            Encoder::Albert(encoder) => encoder.n_layers(),
         }
     }
 }
@@ -111,7 +210,7 @@ impl ModuleT for BertEmbeddingLayer {
 #[derive(Debug)]
 pub struct BertModel {
     embeddings: BertEmbeddingLayer,
-    encoder: BertEncoder,
+    encoder: Encoder,
     seq_classifiers: SequenceClassifiers,
     layers_dropout: Dropout,
 }
@@ -130,12 +229,11 @@ impl BertModel {
     ) -> Result<Self, BertError> {
         let vs = vs.borrow();
 
-        let bert_config = pretrain_config.bert_config();
+        let embeddings = BertEmbeddingLayer::new(vs, pretrain_config, position_embeddings);
 
-        let embeddings =
-            BertEmbeddingLayer::new(vs.sub("encoder"), pretrain_config, position_embeddings);
-        let encoder = BertEncoder::new(vs.sub("encoder"), bert_config)?;
-        let seq_classifiers = SequenceClassifiers::new(vs, pretrain_config, encoders);
+        let encoder = Encoder::new(vs, pretrain_config)?;
+        let seq_classifiers =
+            SequenceClassifiers::new(vs, pretrain_config, encoder.n_layers(), encoders);
 
         Ok(BertModel {
             embeddings,
@@ -161,17 +259,13 @@ impl BertModel {
 
         let pretrained_file = File::open(hdf_path)?;
 
-        let bert_config = pretrain_config.bert_config();
-
         let embeddings = BertEmbeddingLayer::load_from_hdf5(vs, pretrain_config, &pretrained_file)?;
 
-        let encoder = BertEncoder::load_from_hdf5(
-            vs.sub("encoder"),
-            bert_config,
-            pretrained_file.group("bert/encoder")?,
-        )?;
+        let encoder =
+            Encoder::load_from_hdf5(vs.sub("encoder"), pretrain_config, &pretrained_file)?;
 
-        let seq_classifiers = SequenceClassifiers::new(vs, pretrain_config, encoders);
+        let seq_classifiers =
+            SequenceClassifiers::new(vs, pretrain_config, encoder.n_layers(), encoders);
 
         Ok(BertModel {
             embeddings,

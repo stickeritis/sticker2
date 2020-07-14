@@ -1,6 +1,9 @@
 use conllu::graph::Sentence;
 use ndarray::Array1;
 
+mod albert;
+pub use albert::AlbertTokenizer;
+
 mod bert;
 pub use bert::BertTokenizer;
 

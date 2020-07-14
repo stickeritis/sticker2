@@ -7,12 +7,13 @@ use anyhow::{anyhow, Result};
 use sentencepiece::SentencePieceProcessor;
 use serde::{Deserialize, Serialize};
 use serde_json;
+use sticker_transformers::models::albert::AlbertConfig;
 use sticker_transformers::models::bert::BertConfig;
 use toml;
 use wordpieces::WordPieces;
 
 use crate::encoders::EncodersConfig;
-use crate::input::{BertTokenizer, Tokenize, XlmRobertaTokenizer};
+use crate::input::{AlbertTokenizer, BertTokenizer, Tokenize, XlmRobertaTokenizer};
 
 /// Input configuration.
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
@@ -56,6 +57,7 @@ impl Model {
         let reader = BufReader::new(File::open(&self.pretrain_config)?);
 
         Ok(match self.pretrain_type {
+            PretrainModelType::Albert => PretrainConfig::Albert(serde_json::from_reader(reader)?),
             PretrainModelType::Bert => PretrainConfig::Bert(serde_json::from_reader(reader)?),
             PretrainModelType::XlmRoberta => {
                 PretrainConfig::XlmRoberta(serde_json::from_reader(reader)?)
@@ -86,6 +88,7 @@ fn sinusoidal_normalize_default() -> bool {
 
 #[derive(Debug, Deserialize, Serialize)]
 pub enum PretrainConfig {
+    Albert(AlbertConfig),
     Bert(BertConfig),
     XlmRoberta(BertConfig),
 }
@@ -93,6 +96,7 @@ pub enum PretrainConfig {
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum PretrainModelType {
+    Albert,
     Bert,
     XlmRoberta,
 }
@@ -130,6 +134,10 @@ impl Config {
     /// Construct a word piece tokenizer.
     pub fn tokenizer(&self) -> Result<Box<dyn Tokenize>> {
         match self.model.pretrain_type {
+            PretrainModelType::Albert => {
+                let spp = SentencePieceProcessor::load(&self.input.vocab)?;
+                Ok(Box::new(AlbertTokenizer::from(spp)))
+            }
             PretrainModelType::Bert => {
                 let f = File::open(&self.input.vocab)?;
                 let pieces = WordPieces::try_from(BufReader::new(f).lines())?;
