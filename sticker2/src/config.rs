@@ -19,8 +19,8 @@ use crate::input::{AlbertTokenizer, BertTokenizer, Tokenize, XlmRobertaTokenizer
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct Input {
-    /// Vocabulary file.
-    pub vocab: String,
+    /// The type of tokenizer to use.
+    pub tokenizer: Tokenizer,
 }
 
 /// Labeler configuration.
@@ -123,7 +123,8 @@ impl Config {
     {
         let config_path = config_path.as_ref();
 
-        self.input.vocab = relativize_path(config_path, &self.input.vocab)?;
+        *self.input.tokenizer.vocab_mut() =
+            relativize_path(config_path, &self.input.tokenizer.vocab())?;
         self.labeler.labels = relativize_path(config_path, &self.labeler.labels)?;
         self.model.parameters = relativize_path(config_path, &self.model.parameters)?;
         self.model.pretrain_config = relativize_path(config_path, &self.model.pretrain_config)?;
@@ -133,20 +134,48 @@ impl Config {
 
     /// Construct a word piece tokenizer.
     pub fn tokenizer(&self) -> Result<Box<dyn Tokenize>> {
-        match self.model.pretrain_type {
-            PretrainModelType::Albert => {
-                let spp = SentencePieceProcessor::load(&self.input.vocab)?;
+        match self.input.tokenizer {
+            Tokenizer::Albert { ref vocab } => {
+                let spp = SentencePieceProcessor::load(vocab)?;
                 Ok(Box::new(AlbertTokenizer::from(spp)))
             }
-            PretrainModelType::Bert => {
-                let f = File::open(&self.input.vocab)?;
+            Tokenizer::Bert { ref vocab } => {
+                let f = File::open(vocab)?;
                 let pieces = WordPieces::try_from(BufReader::new(f).lines())?;
                 Ok(Box::new(BertTokenizer::new(pieces, "[UNK]")))
             }
-            PretrainModelType::XlmRoberta => {
-                let spp = SentencePieceProcessor::load(&self.input.vocab)?;
+            Tokenizer::XlmRoberta { ref vocab } => {
+                let spp = SentencePieceProcessor::load(vocab)?;
                 Ok(Box::new(XlmRobertaTokenizer::from(spp)))
             }
+        }
+    }
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub enum Tokenizer {
+    Albert { vocab: String },
+    Bert { vocab: String },
+    XlmRoberta { vocab: String },
+}
+
+impl Tokenizer {
+    fn vocab(&self) -> &str {
+        use Tokenizer::*;
+        match self {
+            Albert { vocab } => &vocab,
+            Bert { vocab } => &vocab,
+            XlmRoberta { vocab } => &vocab,
+        }
+    }
+
+    fn vocab_mut(&mut self) -> &mut String {
+        use Tokenizer::*;
+        match self {
+            Albert { ref mut vocab } => vocab,
+            Bert { ref mut vocab } => vocab,
+            XlmRoberta { ref mut vocab } => vocab,
         }
     }
 }
@@ -206,7 +235,7 @@ mod tests {
     use sticker_encoders::lemma::BackoffStrategy;
 
     use crate::config::{
-        Config, Input, Labeler, Model, PositionEmbeddings, PretrainModelType, TomlRead,
+        Config, Input, Labeler, Model, PositionEmbeddings, PretrainModelType, Tokenizer, TomlRead,
     };
     use crate::encoders::{DependencyEncoder, EncoderType, EncodersConfig, NamedEncoderConfig};
 
@@ -219,7 +248,9 @@ mod tests {
             config,
             Config {
                 input: Input {
-                    vocab: "bert-base-german-cased-vocab.txt".to_string()
+                    tokenizer: Tokenizer::Bert {
+                        vocab: "bert-base-german-cased-vocab.txt".to_string()
+                    },
                 },
                 labeler: Labeler {
                     labels: "sticker.labels".to_string(),
