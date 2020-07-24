@@ -194,7 +194,7 @@ impl FinetuneApp {
                     // Use separate learning rates for the encoder and classifiers.
                     if name.starts_with("classifiers") {
                         config.lr = lr_classifier.into();
-                    } else if name.starts_with("encoder") {
+                    } else if name.starts_with("encoder") || name.starts_with("embeddings") {
                         config.lr = lr_encoder.into();
                     } else {
                         unreachable!();
