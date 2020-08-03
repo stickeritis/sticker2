@@ -26,8 +26,8 @@ serde_yaml = "0.8"
 stdinout = "0.4"
 sticker2 = { path = "../sticker2", version = "0.3.0", default-features = false }
 sticker-encoders = "0.5"
-sticker-transformers = { version = "0.7", default-features = false }
-tch = "0.1.7"
+sticker-transformers = { version = "0.8", default-features = false }
+tch = "0.2.0"
 threadpool = "1"
 
 [features]

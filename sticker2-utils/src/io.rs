@@ -57,7 +57,6 @@ impl Model {
         .context("Cannot construct model")?;
 
         vs.load(parameters_path)
-            .map_err(|err| err.compat())
             .context("Cannot load model parameters")?;
 
         if freeze {
