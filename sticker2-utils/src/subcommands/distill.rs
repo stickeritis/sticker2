@@ -146,7 +146,6 @@ impl DistillApp {
                     student
                         .vs
                         .save(format!("distill-step-{}", global_step))
-                        .map_err(|err| err.compat())
                         .context(format!(
                             "Cannot save variable store for step {}",
                             global_step

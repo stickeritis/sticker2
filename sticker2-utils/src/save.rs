@@ -54,7 +54,6 @@ impl<P> Save<P> for EpochSaver<P> {
     fn save(&mut self, vs: &VarStore, completed: CompletedUnit<P>) -> Result<()> {
         if let CompletedUnit::Epoch(_) = completed {
             vs.save(format!("{}epoch-{}", self.prefix, self.epoch))
-                .map_err(|err| err.compat())
                 .context(format!(
                     "Cannot save variable store for epoch {}",
                     self.epoch
@@ -107,7 +106,6 @@ where
 
             if improvement {
                 vs.save(format!("{}epoch-{}", self.prefix, self.epoch))
-                    .map_err(|err| err.compat())
                     .context(format!(
                         "Cannot save variable store for epoch {}",
                         self.epoch
@@ -151,7 +149,6 @@ impl<P> Save<P> for EpochAndBatchesSaver<P> {
         match completed {
             CompletedUnit::Epoch(_) => {
                 vs.save(format!("{}epoch-{}", self.prefix, self.epoch))
-                    .map_err(|err| err.compat())
                     .context(format!(
                         "Cannot save variable store for epoch {}",
                         self.epoch
@@ -166,7 +163,6 @@ impl<P> Save<P> for EpochAndBatchesSaver<P> {
                         "{}epoch-{}-batch-{}",
                         self.prefix, self.epoch, self.epoch_batch
                     ))
-                    .map_err(|err| err.compat())
                     .context(format!(
                         "Cannot save variable store for epoch {} batch {}",
                         self.epoch, self.batch

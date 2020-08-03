@@ -15,6 +15,7 @@ use sticker_transformers::models::bert::{
 };
 use sticker_transformers::models::roberta::RobertaEmbeddings;
 use sticker_transformers::models::sinusoidal::SinusoidalEmbeddings;
+use sticker_transformers::models::Encoder;
 use tch::nn::{ModuleT, Path};
 use tch::{self, Tensor};
 
@@ -195,13 +196,9 @@ impl BertModel {
         };
 
         let mut encoded = if freeze_layers.encoder {
-            tch::no_grad(|| {
-                self.encoder
-                    .forward_t(&embeds, Some(&attention_mask), train)
-            })
+            tch::no_grad(|| self.encoder.encode(&embeds, Some(&attention_mask), train))
         } else {
-            self.encoder
-                .forward_t(&embeds, Some(&attention_mask), train)
+            self.encoder.encode(&embeds, Some(&attention_mask), train)
         };
 
         for layer in &mut encoded {
