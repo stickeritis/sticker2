@@ -1,6 +1,6 @@
 [package]
 name = "sticker2-utils"
-version = "0.4.0"
+version = "0.4.1"
 edition = "2018"
 authors = ["Daniël de Kok <me@danieldk.eu>"]
 description = "Neural sequence labeler"
@@ -24,7 +24,7 @@ itertools = "0.9"
 ordered-float = { version = "1", features = ["serde"] }
 serde_yaml = "0.8"
 stdinout = "0.4"
-sticker2 = { path = "../sticker2", version = "0.4", default-features = false }
+sticker2 = { path = "../sticker2", version = "0.4.1", default-features = false }
 sticker-encoders = "0.5"
 sticker-transformers = { version = "0.8", default-features = false }
 tch = "0.2.0"

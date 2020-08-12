@@ -1235,7 +1235,7 @@ dependencies = [
 
 [[package]]
 name = "sticker2"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "anyhow",
  "approx",
@@ -1263,7 +1263,7 @@ dependencies = [
 
 [[package]]
 name = "sticker2-utils"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "anyhow",
  "clap",
