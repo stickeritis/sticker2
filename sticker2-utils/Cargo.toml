@@ -27,6 +27,7 @@ stdinout = "0.4"
 sticker2 = { path = "../sticker2", version = "0.4.1", default-features = false }
 sticker-encoders = "0.5"
 sticker-transformers = { version = "0.8", default-features = false }
+tfrecord = { version = "0.3", features = ["summary"] }
 tch = "0.2.0"
 threadpool = "1"
 
