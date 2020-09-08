@@ -25,11 +25,11 @@ use crate::encoders::Encoders;
 use crate::model::seq_classifiers::{SequenceClassifiers, SequenceClassifiersLoss};
 
 pub trait PretrainBertConfig {
-    fn bert_config<'a>(&'a self) -> Cow<'a, BertConfig>;
+    fn bert_config(&self) -> Cow<BertConfig>;
 }
 
 impl PretrainBertConfig for PretrainConfig {
-    fn bert_config<'a>(&'a self) -> Cow<'a, BertConfig> {
+    fn bert_config(&self) -> Cow<BertConfig> {
         match self {
             PretrainConfig::Albert(config) => Cow::Owned(config.into()),
             PretrainConfig::Bert(config) => Cow::Borrowed(config),
