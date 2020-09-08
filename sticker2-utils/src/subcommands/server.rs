@@ -192,12 +192,14 @@ impl StickerApp for ServerApp {
         let listener =
             TcpListener::bind(&self.addr).context(format!("Cannot listen on '{}'", self.addr))?;
 
-        Ok(self.serve(
+        self.serve(
             Arc::from(model.tokenizer),
             Arc::new(TaggerWrap(tagger)),
             pool,
             listener,
-        ))
+        );
+
+        Ok(())
     }
 }
 

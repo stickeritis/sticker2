@@ -6,10 +6,8 @@ use std::path::Path;
 use anyhow::{anyhow, Result};
 use sentencepiece::SentencePieceProcessor;
 use serde::{Deserialize, Serialize};
-use serde_json;
 use sticker_transformers::models::albert::AlbertConfig;
 use sticker_transformers::models::bert::BertConfig;
-use toml;
 use wordpieces::WordPieces;
 
 use crate::encoders::EncodersConfig;

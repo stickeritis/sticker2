@@ -5,7 +5,6 @@ use anyhow::{Context, Result};
 use clap::{App, Arg, ArgMatches};
 use conllu::io::{ReadSentence, Reader};
 use indicatif::ProgressStyle;
-use serde_yaml;
 use sticker2::config::Config;
 use sticker2::encoders::Encoders;
 use sticker_encoders::SentenceEncoder;
