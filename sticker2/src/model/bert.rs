@@ -261,8 +261,7 @@ impl BertModel {
 
         let embeddings = BertEmbeddingLayer::load_from_hdf5(vs, pretrain_config, &pretrained_file)?;
 
-        let encoder =
-            Encoder::load_from_hdf5(vs.sub("encoder"), pretrain_config, &pretrained_file)?;
+        let encoder = Encoder::load_from_hdf5(vs, pretrain_config, &pretrained_file)?;
 
         let seq_classifiers =
             SequenceClassifiers::new(vs, pretrain_config, encoder.n_layers(), encoders);
