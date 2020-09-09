@@ -3,8 +3,7 @@
 let
   sources = import ./nix/sources.nix;
   models = import ./nix/models.nix;
-  sticker = pkgs.callPackage sources.sticker {};
-  libtorch = sticker.libtorch.v1_6_0;
+  libtorch = pkgs.libtorch-bin;
   crateOverrides = with pkgs; defaultCrateOverrides // {
     hdf5-sys = attr: {
       HDF5_DIR = symlinkJoin { name = "hdf5-join"; paths = [ hdf5.dev hdf5.out ]; };

@@ -5,9 +5,8 @@ let
   sources = import ./nix/sources.nix;
   models = import ./nix/models.nix;
   nixpkgs = import sources.nixpkgs {};
-  sticker = nixpkgs.callPackage sources.sticker {};
   mozilla = nixpkgs.callPackage "${sources.mozilla}/package-set.nix" {};
-  libtorch = sticker.libtorch.v1_6_0;
+  libtorch = nixpkgs.libtorch-bin;
 in with nixpkgs; mkShell (models // {
   nativeBuildInputs = [
     mozilla.latest.rustChannels.stable.rust
