@@ -11,6 +11,8 @@ pub mod save;
 
 pub mod sent_proc;
 
+pub mod summary;
+
 mod subcommands;
 
 pub mod traits;

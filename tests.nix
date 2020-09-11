@@ -48,7 +48,7 @@ in with pkgs; lib.flatten (lib.mapAttrsToList (_: drv: [
     runTests = true;
   })
   (drv.build.override {
-    features = [ "load-hdf5" "model-tests" ];
+    features = [ "load-hdf5" "model-tests" "tensorboard" ];
     runTests = true;
   })
 ]) cargoNix.workspaceMembers)

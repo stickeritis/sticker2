@@ -1,6 +1,4 @@
-use std::cell::RefCell;
 use std::fs::File;
-use std::io::BufWriter;
 
 use anyhow::{Context, Result};
 use sticker2::config::{Config, PretrainConfig, TomlRead};
@@ -9,7 +7,6 @@ use sticker2::input::Tokenize;
 use sticker2::model::bert::BertModel;
 use tch::nn::VarStore;
 use tch::Device;
-use tfrecord::{EventWriter, EventWriterInit};
 
 /// Wrapper around different parts of a model.
 pub struct Model {
@@ -149,29 +146,4 @@ pub fn load_tokenizer(config: &Config) -> Result<Box<dyn Tokenize>> {
     config
         .tokenizer()
         .context("Cannot read tokenizer vocabulary")
-}
-
-pub struct TensorBoardWriter {
-    writer: Option<RefCell<EventWriter<BufWriter<File>>>>,
-}
-
-impl TensorBoardWriter {
-    pub fn new(prefix: impl AsRef<str>) -> Result<Self> {
-        let writer = EventWriterInit::default().from_prefix(prefix, None)?;
-        Ok(TensorBoardWriter {
-            writer: Some(RefCell::new(writer)),
-        })
-    }
-
-    pub fn noop() -> Self {
-        TensorBoardWriter { writer: None }
-    }
-
-    pub fn write_scalar(&self, tag: &str, step: i64, value: f32) -> Result<()> {
-        if let Some(ref writer) = self.writer {
-            writer.borrow_mut().write_scalar(tag, step, value)?;
-        }
-
-        Ok(())
-    }
 }
