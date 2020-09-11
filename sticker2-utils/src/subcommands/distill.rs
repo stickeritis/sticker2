@@ -20,9 +20,10 @@ use sticker2::util::seq_len_to_mask;
 use tch::nn::VarStore;
 use tch::{self, Device, Kind, Reduction, Tensor};
 
-use crate::io::{load_config, load_pretrain_config, load_tokenizer, Model, TensorBoardWriter};
+use crate::io::{load_config, load_pretrain_config, load_tokenizer, Model};
 use crate::progress::ReadProgress;
-use crate::traits::{StickerApp, DEFAULT_CLAP_SETTINGS};
+use crate::summary::{SummaryOption, SummaryWriter};
+use crate::traits::{StickerApp, StickerOption, DEFAULT_CLAP_SETTINGS};
 use crate::util::count_conllu_sentences;
 
 const BATCH_SIZE: &str = "BATCH_SIZE";
@@ -34,7 +35,6 @@ const GPU: &str = "GPU";
 const HARD_LOSS: &str = "HARD_LOSS";
 const INITIAL_LR_CLASSIFIER: &str = "INITIAL_LR_CLASSIFIER";
 const INITIAL_LR_ENCODER: &str = "INITIAL_LR_ENCODER";
-const LOG_PREFIX: &str = "LOG_PREFIX";
 const LR_DECAY_RATE: &str = "LR_DECAY_RATE";
 const LR_DECAY_STEPS: &str = "LR_DECAY_STEPS";
 const MAX_LEN: &str = "MAX_LEN";
@@ -52,7 +52,7 @@ pub struct DistillApp {
     max_len: Option<SequenceLength>,
     lr_schedules: RefCell<LearningRateSchedules>,
     student_config: String,
-    tensorboard_writer: TensorBoardWriter,
+    summary_writer: Box<dyn SummaryWriter>,
     teacher_config: String,
     train_data: String,
     train_duration: TrainDuration,
@@ -141,11 +141,8 @@ impl DistillApp {
                     global_step,
                 )?;
 
-                self.tensorboard_writer.write_scalar(
-                    "acc:validation,avg",
-                    global_step as i64,
-                    acc,
-                )?;
+                self.summary_writer
+                    .write_scalar("acc:validation,avg", global_step as i64, acc)?;
 
                 if acc > best_acc {
                     best_step = global_step;
@@ -471,13 +468,13 @@ impl DistillApp {
 
             eprintln!("{} loss: {} accuracy: {:.4}", encoder_name, loss, acc);
 
-            self.tensorboard_writer.write_scalar(
+            self.summary_writer.write_scalar(
                 &format!("loss:validation,layer:{}", &encoder_name),
                 global_step as i64,
                 loss,
             )?;
 
-            self.tensorboard_writer.write_scalar(
+            self.summary_writer.write_scalar(
                 &format!("acc:validation,layer:{}", &encoder_name),
                 global_step as i64,
                 acc,
@@ -493,7 +490,7 @@ impl DistillApp {
 
 impl StickerApp for DistillApp {
     fn app() -> App<'static, 'static> {
-        App::new("distill")
+        let app = App::new("distill")
             .settings(DEFAULT_CLAP_SETTINGS)
             .about("Distill a model")
             .arg(
@@ -569,13 +566,6 @@ impl StickerApp for DistillApp {
                     .default_value("5e-5"),
             )
             .arg(
-                Arg::with_name(LOG_PREFIX)
-                    .long("log-prefix")
-                    .value_name("PREFIX")
-                    .takes_value(true)
-                    .help("Prefix for Tensorboard logs"),
-            )
-            .arg(
                 Arg::with_name(LR_DECAY_RATE)
                     .long("lr-decay-rate")
                     .value_name("N")
@@ -619,7 +609,9 @@ impl StickerApp for DistillApp {
                     .value_name("D")
                     .help("Weight decay (L2 penalty).")
                     .default_value("0.0"),
-            )
+            );
+
+        SummaryOption::add_to_app(app)
     }
 
     fn parse(matches: &ArgMatches) -> Result<Self> {
@@ -658,10 +650,7 @@ impl StickerApp for DistillApp {
             .unwrap()
             .parse()
             .context("Cannot parse initial encoder learning rate")?;
-        let tensorboard_writer = match matches.value_of(LOG_PREFIX) {
-            Some(prefix) => TensorBoardWriter::new(prefix)?,
-            None => TensorBoardWriter::noop(),
-        };
+        let summary_writer = SummaryOption::parse(matches)?;
         let lr_decay_rate = matches
             .value_of(LR_DECAY_RATE)
             .unwrap()
@@ -718,7 +707,7 @@ impl StickerApp for DistillApp {
             )),
             student_config,
             teacher_config,
-            tensorboard_writer,
+            summary_writer,
             train_data,
             train_duration,
             validation_data,

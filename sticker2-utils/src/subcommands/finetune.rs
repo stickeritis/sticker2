@@ -14,10 +14,11 @@ use sticker2::optimizers::{AdamW, AdamWConfig};
 use sticker2::util::seq_len_to_mask;
 use tch::{self, Device, Kind};
 
-use crate::io::{Model, TensorBoardWriter};
+use crate::io::Model;
 use crate::progress::ReadProgress;
 use crate::save::{BestEpochSaver, CompletedUnit, Save};
-use crate::traits::{StickerApp, DEFAULT_CLAP_SETTINGS};
+use crate::summary::{SummaryOption, SummaryWriter};
+use crate::traits::{StickerApp, StickerOption, DEFAULT_CLAP_SETTINGS};
 
 const BATCH_SIZE: &str = "BATCH_SIZE";
 const CONFIG: &str = "CONFIG";
@@ -28,7 +29,6 @@ const INITIAL_LR_CLASSIFIER: &str = "INITIAL_LR_CLASSIFIER";
 const INITIAL_LR_ENCODER: &str = "INITIAL_LR_ENCODER";
 const LABEL_SMOOTHING: &str = "LABEL_SMOOTHING";
 const INCLUDE_CONTINUATIONS: &str = "INCLUDE_CONTINUATIONS";
-const LOG_PREFIX: &str = "LOG_PREFIX";
 const LR_DECAY_RATE: &str = "LR_DECAY_RATE";
 const LR_PATIENCE: &str = "LR_PATIENCE";
 const LR_SCALE: &str = "LR_SCALE";
@@ -57,7 +57,7 @@ pub struct FinetuneApp {
     finetune_embeds: bool,
     max_len: Option<SequenceLength>,
     label_smoothing: Option<f64>,
-    tensorboard_writer: TensorBoardWriter,
+    summary_writer: Box<dyn SummaryWriter>,
     include_continuations: bool,
     lr_schedule: LrSchedule,
     patience: usize,
@@ -234,13 +234,13 @@ impl FinetuneApp {
 
             eprintln!("{} loss: {} accuracy: {:.4}", encoder_name, loss, acc);
 
-            self.tensorboard_writer.write_scalar(
+            self.summary_writer.write_scalar(
                 &format!("loss:{},layer:{}", epoch_type, &encoder_name),
                 *global_step as i64,
                 loss,
             )?;
 
-            self.tensorboard_writer.write_scalar(
+            self.summary_writer.write_scalar(
                 &format!("acc:{},layer:{}", epoch_type, &encoder_name),
                 *global_step as i64,
                 acc,
@@ -256,7 +256,7 @@ impl FinetuneApp {
 
 impl StickerApp for FinetuneApp {
     fn app() -> App<'static, 'static> {
-        App::new("finetune")
+        let app = App::new("finetune")
             .settings(DEFAULT_CLAP_SETTINGS)
             .about("Finetune a model")
             .arg(
@@ -328,13 +328,6 @@ impl StickerApp for FinetuneApp {
                     .help("Distribute the given probability to non-target labels"),
             )
             .arg(
-                Arg::with_name(LOG_PREFIX)
-                    .long("log-prefix")
-                    .value_name("PREFIX")
-                    .takes_value(true)
-                    .help("Prefix for Tensorboard logs"),
-            )
-            .arg(
                 Arg::with_name(INCLUDE_CONTINUATIONS)
                     .long("include-continuations")
                     .help("Learn to predict continuation label for continuation word pieces"),
@@ -389,7 +382,9 @@ impl StickerApp for FinetuneApp {
                     .value_name("D")
                     .help("Weight decay (L2 penalty).")
                     .default_value("0.0"),
-            )
+            );
+
+        SummaryOption::add_to_app(app)
     }
 
     fn parse(matches: &ArgMatches) -> Result<Self> {
@@ -434,10 +429,7 @@ impl StickerApp for FinetuneApp {
                     .context(format!("Cannot parse label smoothing probability: {}", v))
             })
             .transpose()?;
-        let tensorboard_writer = match matches.value_of(LOG_PREFIX) {
-            Some(prefix) => TensorBoardWriter::new(prefix)?,
-            None => TensorBoardWriter::noop(),
-        };
+        let summary_writer = SummaryOption::parse(matches)?;
         let max_len = matches
             .value_of(MAX_LEN)
             .map(|v| {
@@ -488,7 +480,7 @@ impl StickerApp for FinetuneApp {
             max_len,
             label_smoothing,
             include_continuations,
-            tensorboard_writer,
+            summary_writer,
             lr_schedule: LrSchedule {
                 initial_lr_classifier,
                 initial_lr_encoder,
@@ -581,11 +573,8 @@ impl StickerApp for FinetuneApp {
                 epoch, last_acc, best_epoch, best_acc, epoch_status
             );
 
-            self.tensorboard_writer.write_scalar(
-                "acc:validation,avg",
-                global_step as i64,
-                last_acc,
-            )?;
+            self.summary_writer
+                .write_scalar("acc:validation,avg", global_step as i64, last_acc)?;
 
             if epoch - best_epoch == self.patience {
                 eprintln!(

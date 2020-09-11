@@ -16,3 +16,11 @@ where
 
     fn run(&self) -> Result<()>;
 }
+
+pub trait StickerOption {
+    type Value;
+
+    fn add_to_app(app: App<'static, 'static>) -> App<'static, 'static>;
+
+    fn parse(matches: &ArgMatches) -> Result<Self::Value>;
+}

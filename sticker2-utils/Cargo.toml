@@ -27,10 +27,11 @@ stdinout = "0.4"
 sticker2 = { path = "../sticker2", version = "0.4", default-features = false }
 sticker-encoders = "0.5"
 sticker-transformers = { version = "0.8", default-features = false }
-tfrecord = { version = "0.3", features = ["summary"] }
+tfrecord = { version = "0.3", features = ["summary"], optional = true }
 tch = "0.2.0"
 threadpool = "1"
 
 [features]
-default = ["load-hdf5"]
+default = ["load-hdf5", "tensorboard"]
 load-hdf5 = ["sticker-transformers/load-hdf5", "sticker2/load-hdf5"]
+tensorboard = ["tfrecord"]
