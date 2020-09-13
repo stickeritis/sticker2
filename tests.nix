@@ -1,22 +1,28 @@
-{ pkgs ? import (import ./nix/sources.nix).nixpkgs {} }:
+{
+  pkgs ? import (import ./nix/sources.nix).nixpkgs {
+    config = {
+      allowUnfreePredicate = pkg: builtins.elem (pkgs.lib.getName pkg) [
+        "libtorch"
+      ];
+    };
+  }
+}:
 
 let
   sources = import ./nix/sources.nix;
   models = import ./nix/models.nix;
-  sticker = pkgs.callPackage sources.sticker {};
-  libtorch = sticker.libtorch.v1_6_0;
   crateOverrides = with pkgs; defaultCrateOverrides // {
     hdf5-sys = attr: {
       HDF5_DIR = symlinkJoin { name = "hdf5-join"; paths = [ hdf5.dev hdf5.out ]; };
     };
 
     sticker2 = attr: {
-      buildInputs = [ libtorch ] ++
+      buildInputs = [ libtorch-bin ] ++
         lib.optional stdenv.isDarwin darwin.Security;
     } // models;
 
     sticker2-utils = attr: {
-      buildInputs = [ libtorch ] ++
+      buildInputs = [ libtorch-bin ] ++
         lib.optional stdenv.isDarwin darwin.Security;
     };
 
@@ -29,7 +35,7 @@ let
     torch-sys = attr: {
       buildInputs = lib.optional stdenv.isDarwin curl;
 
-      LIBTORCH = "${libtorch.dev}";
+      LIBTORCH = "${libtorch-bin.dev}";
     };
   };
   buildRustCrate = pkgs.buildRustCrate.override {
