@@ -55,22 +55,10 @@
         "homepage": "https://github.com/NixOS/nixpkgs",
         "owner": "nixos",
         "repo": "nixpkgs-channels",
-        "rev": "dc80d7bc4a244120b3d766746c41c0d9c5f81dfa",
-        "sha256": "0dy0mp7alc7m34zxall14x42qx9yjm7b0m6psgmw0lb6j1iy1pla",
+        "rev": "61525137fd1002f6f2a5eb0ea27d480713362cd5",
+        "sha256": "1gzwz9jvfcf0is6zma7qlgszkngfb2aa4kam0nhs0qnwb4nqn7mg",
         "type": "tarball",
-        "url": "https://github.com/nixos/nixpkgs-channels/archive/dc80d7bc4a244120b3d766746c41c0d9c5f81dfa.tar.gz",
-        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
-    },
-    "sticker": {
-        "branch": "master",
-        "description": "Nix package set for sticker, models, and bindings",
-        "homepage": null,
-        "owner": "stickeritis",
-        "repo": "nix-packages",
-        "rev": "3688f0cef0d709273188a64b2af8c8e34f066f10",
-        "sha256": "0pqdfrx6n20d6g15l95qvrjy756rq1mcarf4i58bga1gkzmb1hip",
-        "type": "tarball",
-        "url": "https://github.com/stickeritis/nix-packages/archive/3688f0cef0d709273188a64b2af8c8e34f066f10.tar.gz",
+        "url": "https://github.com/nixos/nixpkgs-channels/archive/61525137fd1002f6f2a5eb0ea27d480713362cd5.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "xlm-roberta-base-sentencepiece": {
