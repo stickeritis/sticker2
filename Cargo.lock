@@ -1498,9 +1498,9 @@ dependencies = [
 
 [[package]]
 name = "protobuf"
-version = "2.10.1"
+version = "2.17.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6686ddd96a8dbe2687b5f2a687b2cfb520854010ec480f2d74c32e7c9873d3c5"
+checksum = "cb14183cc7f213ee2410067e1ceeadba2a7478a59432ff0747a335202798b1e2"
 
 [[package]]
 name = "quote"
@@ -1773,9 +1773,9 @@ checksum = "388a1df253eca08550bef6c72392cfe7c30914bf41df5269b68cbd6ff8f570a3"
 
 [[package]]
 name = "sentencepiece"
-version = "0.3.2"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3b0fd13d15ef3ae5f71b087da88a4dbc6ba6a97878448fcfd6ab5d29753136b7"
+checksum = "87b9bebe85ada6fef3074c37b00e96615355f94b95b6c81a4f3cc43e3a9e9404"
 dependencies = [
  "libc",
  "num-derive",
@@ -1787,11 +1787,12 @@ dependencies = [
 
 [[package]]
 name = "sentencepiece-sys"
-version = "0.3.2"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "19db8365e9f785c1a33ee4c4a8e443753f174924294f91ff7e1eb8c03fa55b23"
+checksum = "1a6e06255c4aaea1a7a5e1850bf941a1db32dc14651dad29d2c5992b6b490fa9"
 dependencies = [
  "cc",
+ "cmake",
  "pkg-config",
 ]
 
