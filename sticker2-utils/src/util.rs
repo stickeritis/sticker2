@@ -1,4 +1,5 @@
 use std::io::BufRead;
+use std::os::raw::c_int;
 
 use anyhow::Result;
 
@@ -13,4 +14,10 @@ pub fn count_conllu_sentences(buf_read: impl BufRead) -> Result<usize> {
     }
 
     Ok(n_sents)
+}
+
+#[allow(dead_code)]
+#[no_mangle]
+extern "C" fn mkl_serv_intel_cpu_true() -> c_int {
+    1
 }
