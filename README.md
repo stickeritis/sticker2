@@ -81,10 +81,8 @@ tracker](https://github.com/stickeritis/sticker2/issues).
 
 ## License
 
-sticker is licensed under the [Blue Oak Model License version
-1.0.0](LICENSE.md). The Tensorflow protocol buffer definitions in
-`tf-proto` are licensed under the Apache License version 2.0. The
-[list of contributors](CONTRIBUTORS) is also available.
+sticker2 is licensed under the [Blue Oak Model License version
+1.0.0](LICENSE.md). The [list of contributors](CONTRIBUTORS) is also available.
 
 ## Credits
 
