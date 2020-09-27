@@ -5,4 +5,4 @@ pub use config::{DependencyEncoder, EncoderType, EncodersConfig, NamedEncoderCon
 
 #[allow(clippy::module_inception)]
 mod encoders;
-pub use encoders::{Encoder, Encoders, NamedEncoder};
+pub use encoders::{DecoderError, Encoder, EncoderError, Encoders, NamedEncoder};

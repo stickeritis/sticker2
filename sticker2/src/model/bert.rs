@@ -4,8 +4,6 @@ use std::collections::HashMap;
 use std::path;
 
 #[cfg(feature = "load-hdf5")]
-use anyhow::Error;
-#[cfg(feature = "load-hdf5")]
 use hdf5::File;
 #[cfg(feature = "load-hdf5")]
 use sticker_transformers::hdf5_model::LoadFromHDF5;
@@ -22,6 +20,7 @@ use tch::{self, Tensor};
 
 use crate::config::{PositionEmbeddings, PretrainConfig};
 use crate::encoders::Encoders;
+use crate::error::StickerError;
 use crate::model::seq_classifiers::{SequenceClassifiers, SequenceClassifiersLoss};
 
 pub trait PretrainBertConfig {
@@ -91,7 +90,7 @@ impl BertEmbeddingLayer {
         vs: impl Borrow<Path<'a>>,
         pretrain_config: &PretrainConfig,
         pretrained_file: &File,
-    ) -> Result<BertEmbeddingLayer, Error> {
+    ) -> Result<BertEmbeddingLayer, StickerError> {
         let vs = vs.borrow();
 
         let embeddings = match pretrain_config {
@@ -162,7 +161,7 @@ impl Encoder {
         vs: impl Borrow<Path<'a>>,
         pretrain_config: &PretrainConfig,
         pretrained_file: &File,
-    ) -> Result<Encoder, Error> {
+    ) -> Result<Encoder, BertError> {
         let vs = vs.borrow();
 
         let encoder = match pretrain_config {
@@ -254,7 +253,7 @@ impl BertModel {
         hdf_path: impl AsRef<path::Path>,
         encoders: &Encoders,
         layers_dropout: f64,
-    ) -> Result<Self, Error> {
+    ) -> Result<Self, StickerError> {
         let vs = vs.borrow();
 
         let pretrained_file = File::open(hdf_path)?;
