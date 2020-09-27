@@ -2,15 +2,15 @@
     "albert-base-v2-sentencepiece": {
         "sha256": "0dh35nh493bwiqw6yzcwp1mgca1lzgjjhbb04zzc5id6cyv05yzy",
         "type": "file",
-        "url": "http://www.sfs.uni-tuebingen.de/a3-public-data/sticker2-models/albert-base-v2-sentencepiece.model",
-        "url_template": "http://www.sfs.uni-tuebingen.de/a3-public-data/sticker2-models/albert-base-v2-sentencepiece.model",
+        "url": "https://s3.amazonaws.com/models.huggingface.co/bert/albert-base-v2-spiece.model",
+        "url_template": "https://s3.amazonaws.com/models.huggingface.co/bert/albert-base-v2-spiece.model",
         "version": "1"
     },
     "bert-base-german-cased-vocab": {
         "sha256": "0g91w3nlq9li113lvw73j4b5v00kpml6wlhk71qlzih6wzw2gqbj",
         "type": "file",
-        "url": "http://www.sfs.uni-tuebingen.de/a3-public-data/sticker2-models/bert-base-german-cased-vocab.txt",
-        "url_template": "http://www.sfs.uni-tuebingen.de/a3-public-data/sticker2-models/bert-base-german-cased-vocab.txt",
+        "url": "https://s3.tensordot.com/sticker2/pretrained/bert-base-german-cased-vocab.txt",
+        "url_template": "https://s3.tensordot.com/sticker2/pretrained/bert-base-german-cased-vocab.txt",
         "version": "1"
     },
     "crate2nix": {
@@ -64,8 +64,8 @@
     "xlm-roberta-base-sentencepiece": {
         "sha256": "0r98vghgqykj19d19jly0nmi2z1gjpknvid0wblqh11aprm19j6g",
         "type": "file",
-        "url": "http://www.sfs.uni-tuebingen.de/a3-public-data/sticker2-models/xlm-roberta-base-sentencepiece.bpe.model",
-        "url_template": "http://www.sfs.uni-tuebingen.de/a3-public-data/sticker2-models/xlm-roberta-base-sentencepiece.bpe.model",
+        "url": "https://s3.amazonaws.com/models.huggingface.co/bert/xlm-roberta-base-sentencepiece.bpe.model",
+        "url_template": "https://s3.amazonaws.com/models.huggingface.co/bert/xlm-roberta-base-sentencepiece.bpe.model",
         "version": "1"
     }
 }
