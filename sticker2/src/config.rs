@@ -3,7 +3,6 @@ use std::fs::File;
 use std::io::{BufRead, BufReader, Read};
 use std::path::Path;
 
-use anyhow::{anyhow, Result};
 use sentencepiece::SentencePieceProcessor;
 use serde::{Deserialize, Serialize};
 use sticker_transformers::models::albert::AlbertConfig;
@@ -11,6 +10,7 @@ use sticker_transformers::models::bert::BertConfig;
 use wordpieces::WordPieces;
 
 use crate::encoders::EncodersConfig;
+use crate::error::StickerError;
 use crate::input::{AlbertTokenizer, BertTokenizer, Tokenize, XlmRobertaTokenizer};
 
 /// Input configuration.
@@ -51,14 +51,42 @@ pub struct Model {
 
 impl Model {
     /// Read the pretraining model configuration.
-    pub fn pretrain_config(&self) -> Result<PretrainConfig> {
+    pub fn pretrain_config(&self) -> Result<PretrainConfig, StickerError> {
         let reader = BufReader::new(File::open(&self.pretrain_config)?);
 
         Ok(match self.pretrain_type {
-            PretrainModelType::Albert => PretrainConfig::Albert(serde_json::from_reader(reader)?),
-            PretrainModelType::Bert => PretrainConfig::Bert(serde_json::from_reader(reader)?),
+            PretrainModelType::Albert => {
+                PretrainConfig::Albert(serde_json::from_reader(reader).map_err(|err| {
+                    StickerError::JSonSerialization(
+                        format!(
+                            "Cannot read model ALBERT config file `{}`",
+                            self.pretrain_config
+                        ),
+                        err,
+                    )
+                })?)
+            }
+            PretrainModelType::Bert => {
+                PretrainConfig::Bert(serde_json::from_reader(reader).map_err(|err| {
+                    StickerError::JSonSerialization(
+                        format!(
+                            "Cannot read model BERT config file `{}`",
+                            self.pretrain_config
+                        ),
+                        err,
+                    )
+                })?)
+            }
             PretrainModelType::XlmRoberta => {
-                PretrainConfig::XlmRoberta(serde_json::from_reader(reader)?)
+                PretrainConfig::XlmRoberta(serde_json::from_reader(reader).map_err(|err| {
+                    StickerError::JSonSerialization(
+                        format!(
+                            "Cannot read model XLM-RoBERTa config file `{}`",
+                            self.pretrain_config
+                        ),
+                        err,
+                    )
+                })?)
             }
         })
     }
@@ -115,7 +143,7 @@ pub struct Config {
 
 impl Config {
     /// Make configuration paths relative to the configuration file.
-    pub fn relativize_paths<P>(&mut self, config_path: P) -> Result<()>
+    pub fn relativize_paths<P>(&mut self, config_path: P) -> Result<(), StickerError>
     where
         P: AsRef<Path>,
     {
@@ -131,7 +159,7 @@ impl Config {
     }
 
     /// Construct a word piece tokenizer.
-    pub fn tokenizer(&self) -> Result<Box<dyn Tokenize>> {
+    pub fn tokenizer(&self) -> Result<Box<dyn Tokenize>, StickerError> {
         match self.input.tokenizer {
             Tokenizer::Albert { ref vocab } => {
                 let spp = SentencePieceProcessor::load(vocab)?;
@@ -183,11 +211,11 @@ pub trait TomlRead
 where
     Self: Sized,
 {
-    fn from_toml_read(read: impl Read) -> Result<Self>;
+    fn from_toml_read(read: impl Read) -> Result<Self, StickerError>;
 }
 
 impl TomlRead for Config {
-    fn from_toml_read(mut read: impl Read) -> Result<Self> {
+    fn from_toml_read(mut read: impl Read) -> Result<Self, StickerError> {
         let mut data = String::new();
         read.read_to_string(&mut data)?;
         let config: Config = toml::from_str(&data)?;
@@ -195,7 +223,7 @@ impl TomlRead for Config {
     }
 }
 
-fn relativize_path(config_path: &Path, filename: &str) -> Result<String> {
+fn relativize_path(config_path: &Path, filename: &str) -> Result<String, StickerError> {
     if filename.is_empty() {
         return Ok(filename.to_owned());
     }
@@ -211,18 +239,18 @@ fn relativize_path(config_path: &Path, filename: &str) -> Result<String> {
     Ok(abs_config_path
         .parent()
         .ok_or_else(|| {
-            anyhow!(
+            StickerError::RelativizePathError(format!(
                 "Cannot get parent path of the configuration file: {}",
                 abs_config_path.to_string_lossy()
-            )
+            ))
         })?
         .join(path)
         .to_str()
         .ok_or_else(|| {
-            anyhow!(
-                "Cannot cannot convert partent path to string: {}",
+            StickerError::RelativizePathError(format!(
+                "Cannot cannot convert parent path to string: {}",
                 abs_config_path.to_string_lossy()
-            )
+            ))
         })?
         .to_owned())
 }

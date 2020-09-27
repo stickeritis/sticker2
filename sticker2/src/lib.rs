@@ -2,6 +2,8 @@ pub mod config;
 
 pub mod dataset;
 
+pub mod error;
+
 pub mod encoders;
 
 pub mod graph;

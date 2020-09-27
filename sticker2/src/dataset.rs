@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 use std::io::{BufReader, Read, Seek, SeekFrom};
 
-use anyhow::Error;
 use conllu::io::{ReadSentence, Reader};
 use ndarray::Array1;
 use rand::SeedableRng;
@@ -9,6 +8,7 @@ use rand_xorshift::XorShiftRng;
 use sticker_encoders::SentenceEncoder;
 
 use crate::encoders::NamedEncoder;
+use crate::error::StickerError;
 use crate::input::{SentenceWithPieces, Tokenize};
 use crate::tensor::{NoLabels, TensorBuilder, Tensors};
 use crate::util::RandomRemoveVec;
@@ -18,7 +18,7 @@ use crate::util::RandomRemoveVec;
 /// A data set provides an iterator over the batches in that
 /// dataset.
 pub trait DataSet<'a> {
-    type Iter: Iterator<Item = Result<Tensors, Error>>;
+    type Iter: Iterator<Item = Result<Tensors, StickerError>>;
 
     /// Get an iterator over the dataset batches.
     ///
@@ -37,7 +37,7 @@ pub trait DataSet<'a> {
         max_len: Option<SequenceLength>,
         shuffle_buffer_size: Option<usize>,
         labels: bool,
-    ) -> Result<Self::Iter, Error>;
+    ) -> Result<Self::Iter, StickerError>;
 }
 
 /// A CoNLL-X data set.
@@ -97,7 +97,7 @@ where
         max_len: Option<SequenceLength>,
         shuffle_buffer_size: Option<usize>,
         labels: bool,
-    ) -> Result<Self::Iter, Error> {
+    ) -> Result<Self::Iter, StickerError> {
         // Rewind to the beginning of the data (if necessary).
         self.0.seek(SeekFrom::Start(0))?;
 
@@ -135,7 +135,7 @@ where
         &mut self,
         tokenized_sentences: Vec<SentenceWithPieces>,
         max_seq_len: usize,
-    ) -> Option<Result<Tensors, Error>> {
+    ) -> Option<Result<Tensors, StickerError>> {
         let mut builder = TensorBuilder::new(
             tokenized_sentences.len(),
             max_seq_len,
@@ -174,7 +174,7 @@ where
         &mut self,
         tokenized_sentences: Vec<SentenceWithPieces>,
         max_seq_len: usize,
-    ) -> Option<Result<Tensors, Error>> {
+    ) -> Option<Result<Tensors, StickerError>> {
         let mut builder: TensorBuilder<NoLabels> = TensorBuilder::new(
             tokenized_sentences.len(),
             max_seq_len,
@@ -199,7 +199,7 @@ impl<'a, I> Iterator for ConlluIter<'a, I>
 where
     I: Iterator<Item = Result<SentenceWithPieces, conllu::IOError>>,
 {
-    type Item = Result<Tensors, Error>;
+    type Item = Result<Tensors, StickerError>;
 
     fn next(&mut self) -> Option<Self::Item> {
         let mut batch_sentences = Vec::with_capacity(self.batch_size);

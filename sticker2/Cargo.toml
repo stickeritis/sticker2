@@ -12,7 +12,6 @@ repository = "https://github.com/stickeritis/sticker.git"
 license-file = "../LICENSE.md"
 
 [dependencies]
-anyhow = "1"
 conllu = "0.5"
 edit_tree = "0.1.1"
 hdf5 = { version = "0.6", optional = true }

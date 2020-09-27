@@ -2,12 +2,12 @@ use std::borrow::{Borrow, BorrowMut};
 use std::collections::HashMap;
 use std::convert::TryInto;
 
-use anyhow::Error;
 use ndarray::{Array1, ArrayD, Axis};
 use sticker_encoders::{EncodingProb, SentenceDecoder};
 use tch::Device;
 
 use crate::encoders::Encoders;
+use crate::error::StickerError;
 use crate::input::SentenceWithPieces;
 use crate::model::bert::BertModel;
 use crate::tensor::{NoLabels, TensorBuilder, Tensors};
@@ -34,7 +34,7 @@ impl Tagger {
     pub fn tag_sentences(
         &self,
         sentences: &mut [impl BorrowMut<SentenceWithPieces>],
-    ) -> Result<(), Error> {
+    ) -> Result<(), StickerError> {
         let top_k_numeric = self.top_k_numeric_(sentences)?;
 
         for (top_k, sentence) in top_k_numeric.into_iter().zip(sentences.iter_mut()) {
@@ -55,7 +55,7 @@ impl Tagger {
     fn prepare_batch(
         &self,
         sentences: &[impl Borrow<SentenceWithPieces>],
-    ) -> Result<Tensors, Error> {
+    ) -> Result<Tensors, StickerError> {
         let max_seq_len = sentences
             .iter()
             .map(|sentence| sentence.borrow().pieces.len())
@@ -87,7 +87,7 @@ impl Tagger {
     fn top_k_numeric_<'a, S>(
         &self,
         sentences: &'a [S],
-    ) -> Result<Vec<HashMap<String, Vec<Vec<EncodingProb<usize>>>>>, Error>
+    ) -> Result<Vec<HashMap<String, Vec<Vec<EncodingProb<usize>>>>>, StickerError>
     where
         S: Borrow<SentenceWithPieces>,
     {

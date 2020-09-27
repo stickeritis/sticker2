@@ -11,6 +11,7 @@ use ordered_float::NotNan;
 use sticker2::config::Config;
 use sticker2::dataset::{ConlluDataSet, DataSet, SequenceLength};
 use sticker2::encoders::Encoders;
+use sticker2::error::StickerError;
 use sticker2::input::Tokenize;
 use sticker2::lr::{ExponentialDecay, LearningRateSchedule};
 use sticker2::model::bert::{BertModel, FreezeLayers};
@@ -177,8 +178,8 @@ impl DistillApp {
     fn train_steps(
         &self,
         progress: &ProgressBar,
-        teacher_batches: impl Iterator<Item = Result<Tensors>>,
-        student_batches: impl Iterator<Item = Result<Tensors>>,
+        teacher_batches: impl Iterator<Item = Result<Tensors, StickerError>>,
+        student_batches: impl Iterator<Item = Result<Tensors, StickerError>>,
         global_step: &mut usize,
         optimizer: &mut AdamW,
         teacher: &BertModel,
