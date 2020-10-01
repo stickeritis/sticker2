@@ -10,7 +10,7 @@ use sticker2::encoders::Encoders;
 use sticker2::input::Tokenize;
 use sticker2::lr::{ExponentialDecay, LearningRateSchedule, PlateauLearningRate};
 use sticker2::model::bert::{BertModel, FreezeLayers};
-use sticker2::optimizers::{AdamW, AdamWConfig};
+use sticker2::optimizers::{AdamW, AdamWConfig, GradScaler, Optimizer};
 use sticker2::util::seq_len_to_mask;
 use tch::{self, Device, Kind};
 
@@ -19,6 +19,7 @@ use crate::progress::ReadProgress;
 use crate::save::{BestEpochSaver, CompletedUnit, Save};
 use crate::summary::{SummaryOption, SummaryWriter};
 use crate::traits::{StickerApp, StickerOption, DEFAULT_CLAP_SETTINGS};
+use crate::util::autocast_or_preserve;
 
 const BATCH_SIZE: &str = "BATCH_SIZE";
 const CONFIG: &str = "CONFIG";
@@ -28,6 +29,7 @@ const FINETUNE_EMBEDS: &str = "FINETUNE_EMBEDS";
 const INITIAL_LR_CLASSIFIER: &str = "INITIAL_LR_CLASSIFIER";
 const INITIAL_LR_ENCODER: &str = "INITIAL_LR_ENCODER";
 const LABEL_SMOOTHING: &str = "LABEL_SMOOTHING";
+const MIXED_PRECISION: &str = "MIXED_PRECISION";
 const INCLUDE_CONTINUATIONS: &str = "INCLUDE_CONTINUATIONS";
 const LR_DECAY_RATE: &str = "LR_DECAY_RATE";
 const LR_PATIENCE: &str = "LR_PATIENCE";
@@ -57,6 +59,7 @@ pub struct FinetuneApp {
     finetune_embeds: bool,
     max_len: Option<SequenceLength>,
     label_smoothing: Option<f64>,
+    mixed_precision: bool,
     summary_writer: Box<dyn SummaryWriter>,
     include_continuations: bool,
     lr_schedule: LrSchedule,
@@ -105,12 +108,12 @@ impl FinetuneApp {
         tokenizer: &dyn Tokenize,
         model: &BertModel,
         file: &mut File,
-        mut optimizer: Option<&mut AdamW>,
+        mut grad_scaler: Option<&mut GradScaler<AdamW>>,
         lr_schedulers: &mut LearningRateSchedules,
         global_step: &mut usize,
         epoch: usize,
     ) -> Result<f32> {
-        let epoch_type = if optimizer.is_some() {
+        let epoch_type = if grad_scaler.is_some() {
             "train"
         } else {
             "validation"
@@ -158,33 +161,36 @@ impl FinetuneApp {
 
             let attention_mask = seq_len_to_mask(&batch.seq_lens, batch.inputs.size()[1]);
 
-            let model_loss = model.loss(
-                &batch.inputs.to_device(self.device),
-                &attention_mask.to_device(self.device),
-                &batch.token_mask.to_device(self.device),
-                &batch
-                    .labels
-                    .expect("Batch without labels.")
-                    .into_iter()
-                    .map(|(encoder_name, labels)| (encoder_name, labels.to_device(self.device)))
-                    .collect(),
-                self.label_smoothing,
-                optimizer.is_some(),
-                FreezeLayers {
-                    embeddings: !self.finetune_embeds || freeze_encoder,
-                    encoder: freeze_encoder,
-                    classifiers: optimizer.is_none(),
-                },
-                self.include_continuations,
-            );
-
             let n_batch_tokens = i64::from(batch.token_mask.sum(Kind::Int64));
+
+            let model_loss = autocast_or_preserve(self.mixed_precision, || {
+                model.loss(
+                    &batch.inputs.to_device(self.device),
+                    &attention_mask.to_device(self.device),
+                    &batch.token_mask.to_device(self.device),
+                    &batch
+                        .labels
+                        .expect("Batch without labels.")
+                        .into_iter()
+                        .map(|(encoder_name, labels)| (encoder_name, labels.to_device(self.device)))
+                        .collect(),
+                    self.label_smoothing,
+                    grad_scaler.is_some(),
+                    FreezeLayers {
+                        embeddings: !self.finetune_embeds || freeze_encoder,
+                        encoder: freeze_encoder,
+                        classifiers: grad_scaler.is_none(),
+                    },
+                    self.include_continuations,
+                )
+            });
+
             n_tokens += n_batch_tokens;
 
             let scalar_loss: f32 = model_loss.summed_loss.sum(Kind::Float).into();
 
-            if let Some(ref mut optimizer) = optimizer {
-                optimizer.backward_step(&model_loss.summed_loss.sum(Kind::Float), |name| {
+            if let Some(scaler) = &mut grad_scaler {
+                scaler.backward_step(&model_loss.summed_loss.sum(Kind::Float), |name| {
                     let mut config = AdamWConfig::default();
 
                     // Use weight decay for all variables, except for
@@ -206,9 +212,17 @@ impl FinetuneApp {
                 });
 
                 if epoch != 0 {
+                    self.summary_writer.write_scalar(
+                        "gradient_scale",
+                        *global_step as i64,
+                        scaler.current_scale(),
+                    )?;
+                }
+
+                if epoch != 0 {
                     *global_step += 1;
                 }
-            }
+            };
 
             for (encoder_name, loss) in model_loss.encoder_losses {
                 *encoder_accuracy.entry(encoder_name.clone()).or_insert(0f32) +=
@@ -328,6 +342,11 @@ impl StickerApp for FinetuneApp {
                     .help("Distribute the given probability to non-target labels"),
             )
             .arg(
+                Arg::with_name(MIXED_PRECISION)
+                    .long("mixed-precision")
+                    .help("Enable automatic mixed-precision"),
+            )
+            .arg(
                 Arg::with_name(INCLUDE_CONTINUATIONS)
                     .long("include-continuations")
                     .help("Learn to predict continuation label for continuation word pieces"),
@@ -429,6 +448,7 @@ impl StickerApp for FinetuneApp {
                     .context(format!("Cannot parse label smoothing probability: {}", v))
             })
             .transpose()?;
+        let mixed_precision = matches.is_present(MIXED_PRECISION);
         let summary_writer = SummaryOption::parse(matches)?;
         let max_len = matches
             .value_of(MAX_LEN)
@@ -479,6 +499,7 @@ impl StickerApp for FinetuneApp {
             finetune_embeds,
             max_len,
             label_smoothing,
+            mixed_precision,
             include_continuations,
             summary_writer,
             lr_schedule: LrSchedule {
@@ -513,7 +534,8 @@ impl StickerApp for FinetuneApp {
         ))?;
 
         let mut saver = self.saver.clone();
-        let mut opt = AdamW::new(&model.vs);
+        let opt = AdamW::new(&model.vs);
+        let mut grad_scaler = GradScaler::new_with_defaults(self.mixed_precision, opt);
 
         let mut lr_schedules = self.lr_schedules();
 
@@ -538,7 +560,7 @@ impl StickerApp for FinetuneApp {
                 &*model.tokenizer,
                 &model.model,
                 &mut train_file,
-                Some(&mut opt),
+                Some(&mut grad_scaler),
                 &mut lr_schedules,
                 &mut global_step,
                 epoch,

@@ -19,6 +19,8 @@ use std::collections::HashMap;
 use tch::nn::VarStore;
 use tch::Tensor;
 
+use super::{Optimizer, ZeroGrad};
+
 /// Internal Adam state.
 struct AdamWState {
     step: usize,
@@ -61,34 +63,23 @@ impl<'a> AdamW<'a> {
             vs,
         }
     }
+}
 
-    /// Perform a backward step on the given loss.
-    ///
-    /// The provided configuration is given the full name of the
-    /// variable and should return the Adam configuration. This
-    /// makes it possible to use different Adam hyper parameters
-    /// for different parts of a model.
-    pub fn backward_step<F>(&mut self, loss: &Tensor, config_fun: F)
+impl<'a> Optimizer for AdamW<'a> {
+    type Config = AdamWConfig;
+
+    fn backward_step<F>(&mut self, loss: &Tensor, config_fun: F)
     where
-        F: Fn(&str) -> AdamWConfig,
+        F: Fn(&str) -> Self::Config,
     {
-        self.zero_grad();
+        self.vs.zero_grad();
         loss.backward();
         tch::no_grad(|| self.step(config_fun));
     }
 
-    /// Zero out gradients.
-    pub fn zero_grad(&self) {
-        for (_, mut tensor) in self.vs.variables() {
-            if tensor.requires_grad() {
-                tensor.zero_grad()
-            }
-        }
-    }
-
     fn step<F>(&mut self, config_fun: F)
     where
-        F: Fn(&str) -> AdamWConfig,
+        F: Fn(&str) -> Self::Config,
     {
         for (name, mut tensor) in self.vs.variables() {
             if !tensor.grad().defined() {
@@ -129,5 +120,9 @@ impl<'a> AdamW<'a> {
                 tensor += -config.lr * config.weight_decay * &tensor;
             }
         }
+    }
+
+    fn var_store(&self) -> &VarStore {
+        self.vs
     }
 }
