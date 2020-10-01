@@ -14,29 +14,35 @@ of the models that are available and then describes how to use them.
 |:-------------|-------:|------:|-----------:|-----------------:|-----------:|
 | nl-ud-large  |  98.81 | 99.05 |      98.82 |            93.35 |        192 |
 | nl-ud-medium |  98.80 | 99.01 |      98.78 |            93.09 |        124 |
+| nl-ud-small  |  98.81 | 99.00 |      98.77 |            93.07 |         74 |
 
 | Model        | Docker image                              | Nix attribute                  |
 |:-------------|:------------------------------------------|:-------------------------------|
-| nl-ud-large  | `danieldk/sticker2:nl-ud-large-20200420`  | `sticker2_models.nl-ud-large`  |
-| nl-ud-medium | `danieldk/sticker2:nl-ud-medium-20200430` | `sticker2_models.nl-ud-medium` |
+| nl-ud-large  | `danieldk/sticker2:nl-ud-large-20200812`  | `sticker2_models.nl-ud-large`  |
+| nl-ud-medium | `danieldk/sticker2:nl-ud-medium-20200812` | `sticker2_models.nl-ud-medium` |
+| nl-ud-small | `danieldk/sticker2:nl-ud-small-20200907` | `sticker2_models.nl-ud-small` |
 
 ### German
 
-| Model       | UD POS | STSS POS | Lemma | UD morphology | TüBa-D/Z morphology | Dependency (LAS) | Topological fields | Size (MiB) |
-|:------------|-------:|----------|------:|--------------:|--------------------:|-----------------:|--------------------|-----------:|
-| de-ud-large |  99.23 | 99.47    | 99.34 |         98.36 |               98.42 |            95.82 | 98.19              |        200 |
+| Model        | UD POS | STSS POS | Lemma | UD morphology | TüBa-D/Z morphology | Dependency (LAS) | Topological fields | Size (MiB) |
+|:-------------|-------:|----------|------:|--------------:|--------------------:|-----------------:|--------------------|-----------:|
+| de-ud-large  |  99.20 | 99.43    | 99.31 |         98.33 |               98.38 |            95.77 | 98.14              |        200 |
+| de-ud-medium |  99.18 | 99.41    | 99.28 |         98.27 |               98.33 |            95.33 | 99.03              |        133 |
+| de-ud-small  |  99.18 | 99.41    | 99.26 |         98.20 |               98.26 |            95.38 | 98.05              |         79 |
 
-| Model       | Docker image                             | Nix attribute                 |
-|:------------|:-----------------------------------------|:------------------------------|
-| de-ud-large | `danieldk/sticker2:de-ud-large-20200523` | `sticker2_models.de-ud-large` |
+| Model        | Docker image                              | Nix attribute                  |
+|:-------------|:------------------------------------------|:-------------------------------|
+| de-ud-large  | `danieldk/sticker2:de-ud-large-20200812`  | `sticker2_models.de-ud-large`  |
+| de-ud-medium | `danieldk/sticker2:de-ud-medium-20200831` | `sticker2_models.de-ud-medium` |
+| de-ud-small  | `danieldk/sticker2:de-ud-small-20200907`  | `sticker2_models.de-ud-small`  |
 
 ## Usage
 
 ### Docker
 
 The Docker images have a tag of the form `LANG-TAGSET-SIZE-DATE`. For
-example, `nl-ud-large-20200420` is a large Dutch UD model from April
-20, 2020. Each model image contains two useful commands:
+example, `nl-ud-large-20200812` is a large Dutch UD model from August
+12, 2020. Each model image contains two useful commands:
 
 * `/bin/sticker2-annotate-LANG-TAGSET-SIZE`: annotate data using the
   model. If this command is run without any arguments, it reads from
@@ -45,10 +51,10 @@ example, `nl-ud-large-20200420` is a large Dutch UD model from April
   for the model. This server will listen on a socket for CoNLL-U data.
 
 For example, you can annotate tokenized text using the
-`nl-ud-large-20200420` model using the following command:
+`nl-ud-large-20200812` model using the following command:
 
 ```bash
-$ docker run -i --rm danieldk/sticker2:nl-ud-large-20200420 \
+$ docker run -i --rm danieldk/sticker2:nl-ud-large-20200812 \
   /bin/sticker2-annotate-nl-ud-large \
   < test.conllu > annotated.conllu
 ```
