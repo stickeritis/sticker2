@@ -15,7 +15,7 @@ use sticker2::error::StickerError;
 use sticker2::input::Tokenize;
 use sticker2::lr::{ExponentialDecay, LearningRateSchedule};
 use sticker2::model::bert::{BertModel, FreezeLayers};
-use sticker2::optimizers::{AdamW, AdamWConfig};
+use sticker2::optimizers::{AdamW, AdamWConfig, GradScaler, Optimizer};
 use sticker2::tensor::Tensors;
 use sticker2::util::seq_len_to_mask;
 use tch::nn::VarStore;
@@ -25,7 +25,7 @@ use crate::io::{load_config, load_pretrain_config, load_tokenizer, Model};
 use crate::progress::ReadProgress;
 use crate::summary::{SummaryOption, SummaryWriter};
 use crate::traits::{StickerApp, StickerOption, DEFAULT_CLAP_SETTINGS};
-use crate::util::count_conllu_sentences;
+use crate::util::{autocast_or_preserve, count_conllu_sentences};
 
 const BATCH_SIZE: &str = "BATCH_SIZE";
 const EPOCHS: &str = "EPOCHS";
@@ -39,11 +39,18 @@ const INITIAL_LR_ENCODER: &str = "INITIAL_LR_ENCODER";
 const LR_DECAY_RATE: &str = "LR_DECAY_RATE";
 const LR_DECAY_STEPS: &str = "LR_DECAY_STEPS";
 const MAX_LEN: &str = "MAX_LEN";
+const MIXED_PRECISION: &str = "MIXED_PRECISION";
 const STEPS: &str = "N_STEPS";
 const TRAIN_DATA: &str = "TRAIN_DATA";
 const VALIDATION_DATA: &str = "VALIDATION_DATA";
 const WARMUP: &str = "WARMUP";
 const WEIGHT_DECAY: &str = "WEIGHT_DECAY";
+
+struct DistillLoss {
+    pub loss: Tensor,
+    pub hard_loss: Tensor,
+    pub soft_loss: Tensor,
+}
 
 pub struct DistillApp {
     batch_size: usize,
@@ -51,6 +58,7 @@ pub struct DistillApp {
     eval_steps: usize,
     hard_loss: bool,
     max_len: Option<SequenceLength>,
+    mixed_precision: bool,
     lr_schedules: RefCell<LearningRateSchedules>,
     student_config: String,
     summary_writer: Box<dyn SummaryWriter>,
@@ -75,7 +83,7 @@ struct StudentModel {
 impl DistillApp {
     fn distill_model(
         &self,
-        optimizer: &mut AdamW,
+        grad_scaler: &mut GradScaler<AdamW>,
         teacher: &Model,
         student: &StudentModel,
         teacher_train_file: &File,
@@ -129,7 +137,7 @@ impl DistillApp {
                     teacher_steps,
                     student_steps,
                     &mut global_step,
-                    optimizer,
+                    grad_scaler,
                     &teacher.model,
                     &student.inner,
                 )?;
@@ -174,49 +182,42 @@ impl DistillApp {
         Ok(())
     }
 
-    #[allow(clippy::too_many_arguments)]
-    fn train_steps(
+    fn student_loss(
         &self,
-        progress: &ProgressBar,
-        teacher_batches: impl Iterator<Item = Result<Tensors, StickerError>>,
-        student_batches: impl Iterator<Item = Result<Tensors, StickerError>>,
-        global_step: &mut usize,
-        optimizer: &mut AdamW,
         teacher: &BertModel,
         student: &BertModel,
-    ) -> Result<()> {
-        for (teacher_batch, student_batch) in teacher_batches.zip(student_batches) {
-            let teacher_batch = teacher_batch.context("Cannot read teacher batch")?;
-            let student_batch = student_batch.context("Cannot read student batch")?;
-
-            // Compute masks.
-            let teacher_attention_mask =
-                seq_len_to_mask(&teacher_batch.seq_lens, teacher_batch.inputs.size()[1])
-                    .to_device(self.device);
-            let teacher_token_mask = teacher_batch
-                .token_mask
-                .to_kind(Kind::Bool)
+        teacher_batch: Tensors,
+        student_batch: Tensors,
+    ) -> DistillLoss {
+        // Compute masks.
+        let teacher_attention_mask =
+            seq_len_to_mask(&teacher_batch.seq_lens, teacher_batch.inputs.size()[1])
                 .to_device(self.device);
+        let teacher_token_mask = teacher_batch
+            .token_mask
+            .to_kind(Kind::Bool)
+            .to_device(self.device);
 
-            let teacher_logits = teacher.logits(
-                &teacher_batch.inputs.to_device(self.device),
-                &teacher_attention_mask,
-                false,
-                FreezeLayers {
-                    embeddings: true,
-                    encoder: true,
-                    classifiers: true,
-                },
-            );
+        let teacher_logits = teacher.logits(
+            &teacher_batch.inputs.to_device(self.device),
+            &teacher_attention_mask,
+            false,
+            FreezeLayers {
+                embeddings: true,
+                encoder: true,
+                classifiers: true,
+            },
+        );
 
-            let student_attention_mask =
-                seq_len_to_mask(&student_batch.seq_lens, student_batch.inputs.size()[1])
-                    .to_device(self.device);
-            let student_token_mask = student_batch
-                .token_mask
-                .to_kind(Kind::Bool)
+        let student_attention_mask =
+            seq_len_to_mask(&student_batch.seq_lens, student_batch.inputs.size()[1])
                 .to_device(self.device);
+        let student_token_mask = student_batch
+            .token_mask
+            .to_kind(Kind::Bool)
+            .to_device(self.device);
 
+        autocast_or_preserve(self.mixed_precision, || {
             let student_logits = student.logits(
                 &student_batch.inputs.to_device(self.device),
                 &student_attention_mask,
@@ -262,7 +263,30 @@ impl DistillApp {
                 }
             }
 
-            let loss = &hard_loss + &soft_loss;
+            DistillLoss {
+                loss: &hard_loss + &soft_loss,
+                hard_loss,
+                soft_loss,
+            }
+        })
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn train_steps(
+        &self,
+        progress: &ProgressBar,
+        teacher_batches: impl Iterator<Item = Result<Tensors, StickerError>>,
+        student_batches: impl Iterator<Item = Result<Tensors, StickerError>>,
+        global_step: &mut usize,
+        grad_scaler: &mut GradScaler<AdamW>,
+        teacher: &BertModel,
+        student: &BertModel,
+    ) -> Result<()> {
+        for (teacher_batch, student_batch) in teacher_batches.zip(student_batches) {
+            let teacher_batch = teacher_batch.context("Cannot read teacher batch")?;
+            let student_batch = student_batch.context("Cannot read student batch")?;
+
+            let distill_loss = self.student_loss(teacher, student, teacher_batch, student_batch);
 
             let lr_classifier = self
                 .lr_schedules
@@ -275,7 +299,7 @@ impl DistillApp {
                 .encoder
                 .compute_step_learning_rate(*global_step);
 
-            optimizer.backward_step(&loss, |name| {
+            grad_scaler.backward_step(&distill_loss.loss, |name| {
                 let mut config = AdamWConfig::default();
 
                 // Use weight decay for all variables, except for
@@ -299,13 +323,19 @@ impl DistillApp {
                 config
             });
 
+            self.summary_writer.write_scalar(
+                "gradient_scale",
+                *global_step as i64,
+                grad_scaler.current_scale(),
+            )?;
+
             progress.set_message(&format!(
                 "step: {}, lr encoder: {:.6}, lr classifier: {:.6}, hard loss: {:.4}, soft loss: {:.4}",
                 global_step,
                 lr_encoder,
                 lr_classifier,
-                f32::from(hard_loss),
-                f32::from(soft_loss)
+                f32::from(distill_loss.hard_loss),
+                f32::from(distill_loss.soft_loss)
             ));
             progress.inc(1);
 
@@ -401,29 +431,32 @@ impl DistillApp {
         )? {
             let batch = batch?;
 
+            let n_batch_tokens = i64::from(batch.token_mask.sum(Kind::Int64));
+
             let attention_mask = seq_len_to_mask(&batch.seq_lens, batch.inputs.size()[1]);
 
-            let model_loss = model.loss(
-                &batch.inputs.to_device(self.device),
-                &attention_mask.to_device(self.device),
-                &batch.token_mask.to_device(self.device),
-                &batch
-                    .labels
-                    .expect("Batch without labels.")
-                    .into_iter()
-                    .map(|(encoder_name, labels)| (encoder_name, labels.to_device(self.device)))
-                    .collect(),
-                None,
-                false,
-                FreezeLayers {
-                    embeddings: true,
-                    encoder: true,
-                    classifiers: true,
-                },
-                false,
-            );
+            let model_loss = autocast_or_preserve(self.mixed_precision, || {
+                model.loss(
+                    &batch.inputs.to_device(self.device),
+                    &attention_mask.to_device(self.device),
+                    &batch.token_mask.to_device(self.device),
+                    &batch
+                        .labels
+                        .expect("Batch without labels.")
+                        .into_iter()
+                        .map(|(encoder_name, labels)| (encoder_name, labels.to_device(self.device)))
+                        .collect(),
+                    None,
+                    false,
+                    FreezeLayers {
+                        embeddings: true,
+                        encoder: true,
+                        classifiers: true,
+                    },
+                    false,
+                )
+            });
 
-            let n_batch_tokens = i64::from(batch.token_mask.sum(Kind::Int64));
             n_tokens += n_batch_tokens;
 
             let scalar_loss: f32 = model_loss.summed_loss.sum(Kind::Float).into();
@@ -567,6 +600,11 @@ impl StickerApp for DistillApp {
                     .default_value("5e-5"),
             )
             .arg(
+                Arg::with_name(MIXED_PRECISION)
+                    .long("mixed-precision")
+                    .help("Enable automatic mixed-precision"),
+            )
+            .arg(
                 Arg::with_name(LR_DECAY_RATE)
                     .long("lr-decay-rate")
                     .value_name("N")
@@ -667,6 +705,7 @@ impl StickerApp for DistillApp {
             .map(|v| v.parse().context("Cannot parse maximum sentence length"))
             .transpose()?
             .map(SequenceLength::Tokens);
+        let mixed_precision = matches.is_present(MIXED_PRECISION);
         let warmup_steps = matches
             .value_of(WARMUP)
             .unwrap()
@@ -699,6 +738,7 @@ impl StickerApp for DistillApp {
             eval_steps,
             hard_loss,
             max_len,
+            mixed_precision,
             lr_schedules: RefCell::new(Self::create_lr_schedules(
                 initial_lr_classifier,
                 initial_lr_encoder,
@@ -731,10 +771,11 @@ impl StickerApp for DistillApp {
 
         let student = self.fresh_student(&student_config, &teacher)?;
 
-        let mut optimizer = AdamW::new(&student.vs);
+        let optimizer = AdamW::new(&student.vs);
+        let mut grad_scaler = GradScaler::new_with_defaults(self.mixed_precision, optimizer);
 
         self.distill_model(
-            &mut optimizer,
+            &mut grad_scaler,
             &teacher,
             &student,
             &teacher_train_file,

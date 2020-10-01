@@ -21,3 +21,21 @@ pub fn count_conllu_sentences(buf_read: impl BufRead) -> Result<usize> {
 extern "C" fn mkl_serv_intel_cpu_true() -> c_int {
     1
 }
+
+/// Runs a closure with autocast.
+///
+/// This function runs a closure with `autocast` if enabled
+/// is set to `true`. Otherwise, the closure is run without
+/// autocast *iff* the calling function is **not** autocast.
+///
+/// This function can be used to avoid autocasting overhead.
+pub fn autocast_or_preserve<F, T>(enabled: bool, f: F) -> T
+where
+    F: FnOnce() -> T,
+{
+    if enabled {
+        tch::autocast(true, f)
+    } else {
+        f()
+    }
+}
