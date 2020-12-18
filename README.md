@@ -1,5 +1,8 @@
 # sticker2
 
+**Warning:** [SyntaxDot](https://github.com/tensordot/syntaxdot)
+supersedes sticker2.
+
 ## Introduction
 
 **sticker2** is a sequence labeler using

@@ -1,15 +1,18 @@
 [package]
 name = "sticker2"
-version = "0.5.0"
+version = "0.5.1"
 edition = "2018"
 authors = ["Daniël de Kok <me@danieldk.eu>"]
-description = "Neural sequence labeler"
+description = "Neural sequence labeler, superseded by SyntaxDot"
 documentation = "https://github.com/stickeritis/sticker"
 homepage = "https://github.com/stickeritis/sticker"
 repository = "https://github.com/stickeritis/sticker.git"
 # Use after SPDX list is updated
 # license = "BlueOak-1.0.0"
 license-file = "../LICENSE.md"
+
+[badges]
+maintenance = { status = "deprecated" }
 
 [dependencies]
 conllu = "0.5"
